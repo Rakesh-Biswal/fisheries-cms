@@ -1,8 +1,6 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useRouter } from "next/navigation" // Add this import
-
 
 // ---------- Enhanced i18n object ----------
 const LOCALES = {
@@ -146,7 +144,6 @@ function generateRefId() {
 }
 
 export default function HRPortal() {
-   const router = useRouter();
   const [locale, setLocale] = useState("en")
   const t = LOCALES[locale]
 
@@ -315,11 +312,13 @@ export default function HRPortal() {
 
   const totalApproved = employees.filter((e) => e.approved).length
 
-   const handleSignOut = () => {
+  const handleSignOut = () => {
     if (confirm("Are you sure you want to sign out?")) {
-      router.push("/");  // This should now work
+      // Add sign out logic here
+      console.log("Signing out...")
     }
-  };
+  }
+
   const handleSettings = () => {
     alert("Settings page - Coming soon!")
   }

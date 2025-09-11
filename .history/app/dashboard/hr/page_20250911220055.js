@@ -1,8 +1,6 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useRouter } from "next/navigation" // Add this import
-
 
 // ---------- Enhanced i18n object ----------
 const LOCALES = {
@@ -317,7 +315,7 @@ export default function HRPortal() {
 
    const handleSignOut = () => {
     if (confirm("Are you sure you want to sign out?")) {
-      router.push("/");  // This should now work
+      router.push("/dashboard");  // This should now work
     }
   };
   const handleSettings = () => {
