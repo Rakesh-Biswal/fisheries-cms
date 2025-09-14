@@ -6,6 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, Phone, Mail, MapPin } from "lucide-react";
+
+import HireNewWorker from "@/components/PM_Component/HireNewWorker";
+
 import {
   Dialog,
   DialogContent,
@@ -158,157 +161,7 @@ export default function TeamsPage() {
         </div>
 
         {/* Table */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Team Management</CardTitle>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button>Add New Member</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add Member</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid gap-4">
-                    <div>
-                      <Label>Name</Label>
-                      <Input
-                        value={newMember.name}
-                        onChange={(e) =>
-                          setNewMember({ ...newMember, name: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label>Email</Label>
-                      <Input
-                        value={newMember.email}
-                        onChange={(e) =>
-                          setNewMember({ ...newMember, email: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label>Contact</Label>
-                      <Input
-                        value={newMember.contact}
-                        onChange={(e) =>
-                          setNewMember({
-                            ...newMember,
-                            contact: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label>Property</Label>
-                      <Input
-                        value={newMember.property}
-                        onChange={(e) =>
-                          setNewMember({
-                            ...newMember,
-                            property: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label>Rent</Label>
-                      <Input
-                        value={newMember.rent}
-                        onChange={(e) =>
-                          setNewMember({ ...newMember, rent: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label>Due Date</Label>
-                      <Input
-                        type="date"
-                        value={newMember.dueDate}
-                        onChange={(e) =>
-                          setNewMember({
-                            ...newMember,
-                            dueDate: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <Button onClick={addMember}>Save</Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-4">Team Name</th>
-                    <th className="text-left p-4">Contact</th>
-                    <th className="text-left p-4">Property</th>
-                    <th className="text-left p-4">Monthly Rent</th>
-                    <th className="text-left p-4">Status</th>
-                    <th className="text-left p-4">Due Date</th>
-                    <th className="text-left p-4">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {teams.map((team) => (
-                    <tr key={team.id} className="border-b hover:bg-gray-50">
-                      <td className="p-4">
-                        <div>
-                          <div className="font-medium">{team.name}</div>
-                          <div className="text-sm text-gray-500 flex items-center gap-1">
-                            <Mail className="w-3 h-3" />
-                            {team.email}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4 flex items-center gap-1">
-                        <Phone className="w-3 h-3" />
-                        {team.contact}
-                      </td>
-                      <td className="p-4 flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {team.property}
-                      </td>
-                      <td className="p-4 font-medium">{team.rent}</td>
-                      <td className="p-4">
-                        <Badge
-                          className={
-                            team.status === "Active"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }
-                        >
-                          {team.status}
-                        </Badge>
-                      </td>
-                      <td className="p-4">{team.dueDate}</td>
-                      <td className="p-4">
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
-                            Edit
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => deleteMember(team.id)}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <HireNewWorker/>
       </div>
     </DashboardLayout>
   );
