@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Badge } from "../ui/badge"
 import { User, CreditCard, FileText, Camera, ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react"
 import { toast } from "../ui/use-toast"
-import { uploadToR2 } from "../../lib/cloudflare-r2"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
