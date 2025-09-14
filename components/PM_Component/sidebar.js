@@ -62,9 +62,9 @@ const sidebarItems = [
 ];
 
 const bottomItems = [
-  { name: "Setting", href: "/settings", icon: Settings },
-  { name: "Help & Support", href: "/help", icon: HelpCircle },
-  { name: "Logout", href: "/logout", icon: LogOut },
+  { name: "Setting", href: "/dashboard/projectmanager/settings", icon: Settings },
+  { name: "Help & Support", href: "/dashboard/projectmanager/help", icon: HelpCircle },
+  { name: "Logout", href: "/dashboard/projectmanager/logout", icon: LogOut },
 ]
 
 export default function Sidebar({ onClose }) {
