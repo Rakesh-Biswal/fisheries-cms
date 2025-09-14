@@ -10,6 +10,8 @@ import { Mail, Lock, Phone, ArrowRight, ArrowLeft, Eye, EyeOff } from "lucide-re
 import { initializeApp } from "firebase/app"
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth"
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -64,7 +66,7 @@ export default function EmployeeSignInPage() {
 
   const validateEmailPassword = () => {
     const newErrors = {}
-    
+
     if (!formData.email) {
       newErrors.email = "Company email is required"
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -83,7 +85,7 @@ export default function EmployeeSignInPage() {
 
   const validatePhone = () => {
     const newErrors = {}
-    
+
     if (!formData.phone) {
       newErrors.phone = "Phone number is required"
     } else if (!/^[6-9]\d{9}$/.test(formData.phone)) {
@@ -96,7 +98,7 @@ export default function EmployeeSignInPage() {
 
   const validateOtp = () => {
     const newErrors = {}
-    
+
     if (!formData.otp || formData.otp.length !== 6) {
       newErrors.otp = "Please enter a valid 6-digit OTP"
     }
@@ -106,15 +108,15 @@ export default function EmployeeSignInPage() {
   }
 
   const handleEmailPasswordSubmit = async (e) => {
-    e.preventDefault()
-    
-    if (!validateEmailPassword()) return
+    e.preventDefault();
 
-    setIsLoading(true)
+    if (!validateEmailPassword()) return;
+
+    setIsLoading(true);
 
     try {
       // Call employee sign-in API
-      const response = await fetch("/api/employee/signin", {
+      const response = await fetch(`${API_URL}/api/employee/signin`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -123,27 +125,33 @@ export default function EmployeeSignInPage() {
           email: formData.email,
           password: formData.password,
         }),
-      })
+        credentials: "include",
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (data.success) {
-        // Redirect to employee dashboard
-        window.location.href = "/employee/dashboard"
+        // Redirect based on role
+        if (data.redirectTo) {
+          window.location.href = data.redirectTo;
+        } else {
+          // Default redirect for other employees
+          window.location.href = "/employee/dashboard";
+        }
       } else {
-        setErrors({ submit: data.error || "Failed to sign in" })
+        setErrors({ submit: data.error || "Failed to sign in" });
       }
     } catch (error) {
-      console.error("Sign-in error:", error)
-      setErrors({ submit: "Network error. Please try again." })
+      console.error("Sign-in error:", error);
+      setErrors({ submit: "Network error. Please try again." });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleSendOtp = async (e) => {
     e.preventDefault()
-    
+
     if (!validatePhone()) return
 
     setIsLoading(true)
@@ -180,7 +188,7 @@ export default function EmployeeSignInPage() {
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault()
-    
+
     if (!validateOtp()) return
 
     setIsLoading(true)
@@ -188,7 +196,7 @@ export default function EmployeeSignInPage() {
     try {
       const result = await confirmationResult.confirm(formData.otp)
       console.log("Phone verified successfully:", result.user.uid)
-      
+
       // Call employee phone sign-in API
       const response = await fetch("/api/employee/signin-phone", {
         method: "POST",
@@ -232,8 +240,8 @@ export default function EmployeeSignInPage() {
     <AuthLayout
       title="Employee Sign In"
       titleOdia="କର୍ମଚାରୀ ସାଇନ୍ ଇନ୍"
-      subtitle={isPhoneSignIn 
-        ? (isOtpSent ? "Enter the OTP sent to your phone" : "Sign in with your phone number") 
+      subtitle={isPhoneSignIn
+        ? (isOtpSent ? "Enter the OTP sent to your phone" : "Sign in with your phone number")
         : "Sign in to access your employee dashboard"
       }
     >
@@ -286,9 +294,9 @@ export default function EmployeeSignInPage() {
             {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
           </div>
 
-          <Button 
-            type="submit" 
-            className="w-full h-12 text-base" 
+          <Button
+            type="submit"
+            className="w-full h-12 text-base"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -313,9 +321,9 @@ export default function EmployeeSignInPage() {
             </div>
           </div>
 
-          <Button 
-            type="button" 
-            variant="outline" 
+          <Button
+            type="button"
+            variant="outline"
             className="w-full h-11"
             onClick={() => setIsPhoneSignIn(true)}
           >
@@ -366,7 +374,7 @@ export default function EmployeeSignInPage() {
                   OTP sent to <strong>+91{formData.phone}</strong>
                 </p>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="otp" className="text-sm font-medium">
                   Enter OTP
@@ -393,18 +401,18 @@ export default function EmployeeSignInPage() {
           )}
 
           <div className="flex gap-3">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               className="flex-1 h-11"
               onClick={isOtpSent ? handleBackToPhone : handleBackToEmail}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
-            <Button 
-              type="submit" 
-              className="flex-1 h-11" 
+            <Button
+              type="submit"
+              className="flex-1 h-11"
               disabled={isLoading}
             >
               {isLoading ? (
