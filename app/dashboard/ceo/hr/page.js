@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import CeoSidebar from "../../../../components/CeoComponent/CeoSidebar"
+import { useRouter } from "next/navigation"
+import CeoSidebar from "@/components/CeoComponent/CeoSidebar"
 import NoHrState from "../../../../components/CeoComponent/NoHrState"
 import HireHrForm from "../../../../components/CeoComponent/HireHrForm"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../components/ui/card"
@@ -24,6 +25,7 @@ export default function CeoHrPage() {
   const [loading, setLoading] = useState(true)
   const [showHireForm, setShowHireForm] = useState(false)
   const [error, setError] = useState(null)
+  const router = useRouter()
 
   // Demo data for charts (keeping as requested)
   const recruitmentPipeline = [
@@ -57,14 +59,14 @@ export default function CeoHrPage() {
 
       const response = await fetch(`${API_URL}/api/ceo/hr/dashboard`, {
         method: "GET",
-        credentials: "include", 
+        credentials: "include",
       });
 
       if (response.ok) {
         const json = await response.json();
 
         console.log("Fetched HR Data:", json);
-        setHrData(json.data); 
+        setHrData(json.data);
       }
       else if (response.status === 404) {
         setHrData({ hrEmployees: [], metrics: null });
@@ -89,6 +91,11 @@ export default function CeoHrPage() {
   const handleHireSuccess = (newHr) => {
     fetchHrData() // Refresh data after successful hire
   }
+
+  const handleEmployeeClick = (employeeId) => {
+    router.push(`/dashboard/ceo/hr/hrprofile?id=${employeeId}`)
+  }
+
 
   if (loading) {
     return (
@@ -198,7 +205,11 @@ export default function CeoHrPage() {
           <CardContent>
             <div className="space-y-4">
               {hrData.hrEmployees.map((employee, index) => (
-                <div key={employee.id || index} className="flex items-center justify-between p-4 border rounded-lg">
+                <div
+                  key={employee._id || index}
+                  className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleEmployeeClick(employee._id)}
+                >
                   <div className="flex items-center space-x-3">
                     <Avatar>
                       <AvatarImage src={employee.photo || "/placeholder.svg"} />
@@ -213,8 +224,9 @@ export default function CeoHrPage() {
                       <div className="font-medium">{employee.name}</div>
                       <div className="text-sm text-muted-foreground">{employee.designation}</div>
                       <div className="text-xs text-muted-foreground">
-                        Joined: {new Date(employee.joiningDate).toLocaleDateString()}
+                        Joined: {employee.businessData?.joiningDate ? new Date(employee.businessData.joiningDate).toLocaleDateString() : "N/A"}
                       </div>
+
                     </div>
                   </div>
                   <div className="text-right space-y-1">
