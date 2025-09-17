@@ -58,7 +58,7 @@ const menuItems = [
     {
     title: "Department",
     items: [
-      { name: "Team Leader", href: "/dashboard/hr/team-leader", icon: Settings },
+      { name: "Team Leader", href: "/dashboard/hr/sett", icon: Settings },
       { name: "Accoutant", href: "/dashboard/hr/security", icon: Shield },
        { name: "Project Manger", href: "/dashboard/hr/security", icon: Shield },
       { name: "Sales Employee", href: "/dashboard/hr/help", icon: HelpCircle },
@@ -73,7 +73,7 @@ export default function DashboardLayout({ children }) {
   const pathname = usePathname()
 
   return (
-    <div className="flex bg-gray-50">
+    <div className="flex h-screen bg-gray-50">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden" onClick={() => setSidebarOpen(false)} />
