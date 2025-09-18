@@ -5,49 +5,33 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Users, Plus, Target, MapPin, TrendingUp, ArrowLeft } from "lucide-react"
+import { Users, Plus, Target, MapPin, TrendingUp } from "lucide-react"
 import DashboardLayout from "@/components/Hrcomponent/dashboard-layout"
-import HireTeamLeaderForm from "@/components/HrComponent/HireTeamLeaderForm"
+import HireSalesEmployeeForm from "@/components/HrComponent/HireSalesEmployeeForm"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
-export default function TeamLeadersPage() {
-  const [teamLeaders, setTeamLeaders] = useState([])
-  const [currentHr, setCurrentHr] = useState(null)
+export default function SalesEmployeesPage() {
+  const [salesEmployees, setSalesEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [showHireForm, setShowHireForm] = useState(false)
   const [error, setError] = useState(null)
 
-  const fetchCurrentHr = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/hr/overview/me`, {
-        credentials: "include",
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setCurrentHr(data.user.id)
-        console.log("Fetched current HR:", currentHr)
-      }
-    } catch (error) {
-      console.error("Error fetching HR data:", error)
-    }
-  }
-
-  const fetchTeamLeaders = async () => {
+  const fetchSalesEmployees = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`${API_URL}/api/hr/team-leaders/fetch-data`, {
+      const response = await fetch(`${API_URL}/api/hr/sales-employee/fetch-data`, {
         credentials: "include",
       })
 
       if (response.ok) {
         const data = await response.json()
-        setTeamLeaders(data.data)
+        setSalesEmployees(data.data)
       } else {
-        throw new Error("Failed to fetch team leaders")
+        throw new Error("Failed to fetch sales employees")
       }
     } catch (err) {
-      console.error("Error fetching team leaders:", err)
+      console.error("Error fetching sales employees:", err)
       setError(err.message)
     } finally {
       setLoading(false)
@@ -55,19 +39,12 @@ export default function TeamLeadersPage() {
   }
 
   useEffect(() => {
-    if (currentHr) {
-      console.log("✅ currentHr state updated:", currentHr)
-    }
-  }, [currentHr])
-
-  useEffect(() => {
-    fetchCurrentHr()
-    fetchTeamLeaders()
+    fetchSalesEmployees()
   }, [])
 
-  const handleHireSuccess = (newTeamLeader) => {
+  const handleHireSuccess = (newSalesEmployee) => {
     // Refresh data and close takeover view
-    fetchTeamLeaders()
+    fetchSalesEmployees()
     setShowHireForm(false)
   }
 
@@ -75,7 +52,7 @@ export default function TeamLeadersPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
         </div>
       </DashboardLayout>
     )
@@ -84,39 +61,28 @@ export default function TeamLeadersPage() {
   return (
     <DashboardLayout>
       {showHireForm ? (
-        !currentHr ? (
-          // Show loading until currentHr is fetched
-          <div className="flex justify-center items-center h-full">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <div className="bg-white p-2 w-full">
+          <div className="rounded-lg">
+            <HireSalesEmployeeForm onClose={() => setShowHireForm(false)} onSuccess={handleHireSuccess} />
           </div>
-        ) : (
-          <div className="bg-white p-2 w-full">
-            <div className="rounded-lg">
-              <HireTeamLeaderForm
-                onClose={() => setShowHireForm(false)}
-                onSuccess={handleHireSuccess}
-                currentHr={currentHr} // ✅ This will now be safe
-              />
-            </div>
-          </div>
-        )
+        </div>
       ) : (
         // Original page content
         <div className="space-y-6 p-6">
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold">Team Leaders</h1>
-              <p className="text-muted-foreground">Manage sales team leaders and their performance</p>
+              <h1 className="text-2xl md:text-3xl font-bold">Sales Employees</h1>
+              <p className="text-muted-foreground">Manage sales employees and their performance</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
-              <Badge variant="default" className="bg-blue-500 w-fit">
+              <Badge variant="default" className="bg-purple-500 w-fit">
                 <Users className="w-4 h-4 mr-1" />
-                {teamLeaders.length} Team Leaders
+                {salesEmployees.length} Sales Employees
               </Badge>
               <Button onClick={() => setShowHireForm(true)} size="sm">
                 <Plus className="w-4 h-4 mr-1" />
-                Hire New Team Leader
+                Hire New Sales Employee
               </Button>
             </div>
           </div>
@@ -128,33 +94,33 @@ export default function TeamLeadersPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-4">{error}</p>
-                <Button onClick={fetchTeamLeaders}>Try Again</Button>
+                <Button onClick={fetchSalesEmployees}>Try Again</Button>
               </CardContent>
             </Card>
-          ) : teamLeaders.length === 0 ? (
+          ) : salesEmployees.length === 0 ? (
             <Card className="text-center p-8">
               <Target className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">No Team Leaders Yet</h3>
+              <h3 className="text-lg font-semibold mb-2">No Sales Employees Yet</h3>
               <p className="text-muted-foreground mb-4">
-                Start by hiring your first team leader to manage sales operations.
+                Start by hiring your first sales employee to manage sales operations.
               </p>
               <Button onClick={() => setShowHireForm(true)}>
                 <Plus className="w-4 h-4 mr-1" />
-                Hire First Team Leader
+                Hire First Sales Employee
               </Button>
             </Card>
           ) : (
             <>
-              {/* Team Leaders Grid */}
+              {/* Sales Employees Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {teamLeaders.map((leader) => (
-                  <Card key={leader._id} className="hover:shadow-lg transition-shadow">
+                {salesEmployees.map((employee) => (
+                  <Card key={employee._id} className="hover:shadow-lg transition-shadow">
                     <CardHeader className="pb-4">
                       <div className="flex items-center space-x-3">
                         <Avatar className="h-12 w-12">
-                          <AvatarImage src={leader.photo || "/placeholder.svg"} />
-                          <AvatarFallback className="bg-blue-100 text-blue-600">
-                            {leader.name
+                          <AvatarImage src={employee.photo || "/placeholder.svg"} />
+                          <AvatarFallback className="bg-purple-100 text-purple-600">
+                            {employee.name
                               .split(" ")
                               .map((n) => n[0])
                               .join("")
@@ -162,8 +128,8 @@ export default function TeamLeadersPage() {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <CardTitle className="text-lg">{leader.name}</CardTitle>
-                          <CardDescription>{leader.businessData?.designation}</CardDescription>
+                          <CardTitle className="text-lg">{employee.name}</CardTitle>
+                          <CardDescription>{employee.businessData?.designation}</CardDescription>
                         </div>
                       </div>
                     </CardHeader>
@@ -172,23 +138,27 @@ export default function TeamLeadersPage() {
                         <span className="text-muted-foreground">Zone:</span>
                         <span className="font-medium flex items-center">
                           <MapPin className="w-4 h-4 mr-1" />
-                          {leader.businessData?.assignedZone || "Not assigned"}
+                          {employee.businessData?.assignedZone || "Not assigned"}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Team Size:</span>
-                        <span className="font-medium">{leader.businessData?.teamSize || 0} members</span>
+                        <span className="text-muted-foreground">Experience:</span>
+                        <span className="font-medium">{employee.experience || 0} years</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Monthly Target:</span>
-                        <span className="font-medium">₹{leader.businessData?.monthlyTarget?.toLocaleString() || "0"}</span>
+                        <span className="font-medium">
+                          ₹{employee.businessData?.monthlyTarget?.toLocaleString() || "0"}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Status:</span>
-                        <Badge variant={leader.status === "active" ? "default" : "secondary"}>{leader.status}</Badge>
+                        <Badge variant={employee.status === "active" ? "default" : "secondary"}>
+                          {employee.status}
+                        </Badge>
                       </div>
                       <div className="pt-3 border-t">
-                        <Button variant="outline" size="sm" className="w-full">
+                        <Button variant="outline" size="sm" className="w-full bg-transparent">
                           View Details
                         </Button>
                       </div>
@@ -202,26 +172,35 @@ export default function TeamLeadersPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <TrendingUp className="w-5 h-5 mr-2" />
-                    Team Leaders Performance Overview
+                    Sales Employees Performance Overview
                   </CardTitle>
-                  <CardDescription>Summary of all team leaders' performance metrics</CardDescription>
+                  <CardDescription>Summary of all sales employees' performance metrics</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">{teamLeaders.length}</div>
-                      <div className="text-sm text-muted-foreground">Total Leaders</div>
+                    <div className="text-center p-4 bg-purple-50 rounded-lg">
+                      <div className="text-2xl font-bold text-purple-600">{salesEmployees.length}</div>
+                      <div className="text-sm text-muted-foreground">Total Employees</div>
                     </div>
                     <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">{teamLeaders.filter(l => l.status === "active").length}</div>
-                      <div className="text-sm text-muted-foreground">Active Leaders</div>
+                      <div className="text-2xl font-bold text-green-600">
+                        {salesEmployees.filter((e) => e.status === "active").length}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Active Employees</div>
                     </div>
                     <div className="text-center p-4 bg-orange-50 rounded-lg">
-                      <div className="text-2xl font-bold text-orange-600">{teamLeaders.reduce((sum, leader) => sum + (leader.businessData?.teamSize || 0), 0)}</div>
-                      <div className="text-sm text-muted-foreground">Total Team Members</div>
+                      <div className="text-2xl font-bold text-orange-600">
+                        {salesEmployees.reduce((sum, employee) => sum + (employee.experience || 0), 0)}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Total Experience (Years)</div>
                     </div>
-                    <div className="text-center p-4 bg-purple-50 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">₹{teamLeaders.reduce((sum, leader) => sum + (leader.businessData?.monthlyTarget || 0), 0).toLocaleString()}</div>
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600">
+                        ₹
+                        {salesEmployees
+                          .reduce((sum, employee) => sum + (employee.businessData?.monthlyTarget || 0), 0)
+                          .toLocaleString()}
+                      </div>
                       <div className="text-sm text-muted-foreground">Total Monthly Target</div>
                     </div>
                   </div>

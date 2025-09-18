@@ -15,16 +15,16 @@ import {
   LayoutDashboard,
   Clock,
   Database,
-  CheckSquare,
   Users,
   CreditCard,
   UserCheck,
   UserPlus,
-  Receipt,
   Shield,
   Cloud,
   Menu,
   X,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react"
 
 const menuItems = [
@@ -34,7 +34,6 @@ const menuItems = [
       { name: "Dashboard", href: "/dashboard/hr", icon: LayoutDashboard },
       { name: "Timesheet", href: "/dashboard/hr/timesheet", icon: Clock },
       { name: "Data Management", href: "/dashboard/hr/data-management", icon: Database },
-      { name: "Approval", href: "/dashboard/hr/approval", icon: CheckSquare },
     ],
   },
   {
@@ -44,48 +43,46 @@ const menuItems = [
       { name: "Payroll", href: "/dashboard/hr/payroll", icon: CreditCard },
       { name: "Attendance", href: "/dashboard/hr/attendance", icon: UserCheck },
       { name: "Recruitment", href: "/dashboard/hr/recruitment", icon: UserPlus },
-      { name: "Reimbursement", href: "/dashboard/hr/reimbursement", icon: Receipt },
+    ],
+  },
+  {
+    title: "Department",
+    collapsible: true, // ✅ mark as collapsible
+    items: [
+      { name: "Team Leader", href: "/dashboard/hr/team-leader", icon: Settings },
+      { name: "Accoutant", href: "/dashboard/hr/accountant", icon: Shield },
+      { name: "Project Manger", href: "/dashboard/hr/security", icon: Shield },
+      { name: "Sales Employee", href: "/dashboard/hr/salesemployee", icon: HelpCircle },
+      { name: "Telecaller", href: "/dashboard/hr/telecaller", icon: HelpCircle },
     ],
   },
   {
     title: "SUPPORT",
     items: [
       { name: "Settings", href: "/dashboard/hr/settings", icon: Settings },
-      { name: "Security", href: "/dashboard/hr/security", icon: Shield },
       { name: "Help", href: "/dashboard/hr/help", icon: HelpCircle },
     ],
   },
-    {
-    title: "Department",
-    items: [
-      { name: "Team Leader", href: "/dashboard/hr/team-leader", icon: Settings },
-      { name: "Accoutant", href: "/dashboard/hr/security", icon: Shield },
-       { name: "Project Manger", href: "/dashboard/hr/security", icon: Shield },
-      { name: "Sales Employee", href: "/dashboard/hr/help", icon: HelpCircle },
-      { name: "Telecaller", href: "/dashboard/hr/help", icon: HelpCircle },
-    ],
-  },
-  
 ]
 
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [departmentOpen, setDepartmentOpen] = useState(false) // ✅ State to toggle departments
   const pathname = usePathname()
 
   return (
     <div className="flex bg-gray-50">
-      {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <div
         className={cn(
           "fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
+        {/* Sidebar Header */}
         <div className="flex items-center justify-between h-16 px-6 border-b">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -98,13 +95,29 @@ export default function DashboardLayout({ children }) {
           </Button>
         </div>
 
+        {/* Sidebar Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-8 overflow-y-auto">
           {menuItems.map((section) => (
             <div key={section.title}>
-              <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+              {/* Section Title (Clickable for Department) */}
+              <div
+                className={cn(
+                  "flex items-center justify-between px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3",
+                  section.collapsible && "cursor-pointer hover:text-gray-700"
+                )}
+                onClick={() => section.collapsible && setDepartmentOpen(!departmentOpen)}
+              >
                 {section.title}
-              </h3>
-              <div className="space-y-1">
+                {section.collapsible &&
+                  (departmentOpen ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  ))}
+              </div>
+
+              {/* Render items (hidden if Department is collapsed) */}
+              <div className={cn("space-y-1", section.collapsible && !departmentOpen && "hidden")}>
                 {section.items.map((item) => {
                   const Icon = item.icon
                   const isActive = pathname === item.href
@@ -148,9 +161,8 @@ export default function DashboardLayout({ children }) {
         </div>
       </div>
 
-      {/* Main content */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
         <header className="bg-white shadow-sm border-b">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center space-x-4">
@@ -181,7 +193,6 @@ export default function DashboardLayout({ children }) {
           </div>
         </header>
 
-        {/* Page content */}
         <main className="flex-1 overflow-y-auto bg-gray-50">{children}</main>
       </div>
     </div>
