@@ -176,6 +176,29 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
         }
         break
       case 4:
+        if (!formData.employeeType) {
+          errors.employeeType = "Employee type is required"
+          isValid = false
+        }
+        if (!formData.department) {
+          errors.department = "Department is required"
+          isValid = false
+        }
+        if (!formData.designation) {
+          errors.designation = "Designation is required"
+          isValid = false
+        }
+        if (!formData.experience) {
+          errors.experience = "Experience is required"
+          isValid = false
+        } else if (formData.experience < 0 || formData.experience > 50) {
+          errors.experience = "Experience must be between 0 and 50 years"
+          isValid = false
+        }
+        if (!formData.qualification) {
+          errors.qualification = "Qualification is required"
+          isValid = false
+        }
         if (!formData.joiningDate) {
           errors.joiningDate = "Joining date is required"
           isValid = false
@@ -236,7 +259,7 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
         },
       }
 
-      const response = await fetch(`${API_URL}/api/hr/sales-employee/hire`, {
+      const response = await fetch(`${API_URL}/api/hr/sales-employees/hire`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -286,18 +309,16 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
                     className="flex flex-col items-center z-10 bg-gradient-to-r from-purple-50 to-pink-50 px-2"
                   >
                     <div
-                      className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${
-                        currentStep >= step.number
+                      className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${currentStep >= step.number
                           ? "bg-purple-500 border-purple-500 text-white shadow-lg"
                           : "border-gray-300 text-gray-400 bg-white"
-                      }`}
+                        }`}
                     >
                       {currentStep > step.number ? <Check className="w-5 h-5" /> : <step.icon className="w-5 h-5" />}
                     </div>
                     <p
-                      className={`text-xs mt-2 text-center font-medium max-w-20 ${
-                        currentStep >= step.number ? "text-purple-600" : "text-gray-500"
-                      }`}
+                      className={`text-xs mt-2 text-center font-medium max-w-20 ${currentStep >= step.number ? "text-purple-600" : "text-gray-500"
+                        }`}
                     >
                       {step.title}
                     </p>
@@ -412,9 +433,342 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
               </div>
             )}
 
+            {/* Step 2: Documents & Personal Details */}
+            {currentStep === 2 && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="aadhar" className="text-sm font-medium text-gray-700">
+                      Aadhar Number *
+                    </Label>
+                    <Input
+                      id="aadhar"
+                      value={formData.aadhar}
+                      onChange={(e) => handleInputChange("aadhar", e.target.value.replace(/\D/g, ""))}
+                      placeholder="1234 5678 9012"
+                      maxLength={12}
+                      className="h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                      aria-invalid={!!formErrors.aadhar}
+                    />
+                    {formErrors.aadhar && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {formErrors.aadhar}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pan" className="text-sm font-medium text-gray-700">
+                      PAN Number *
+                    </Label>
+                    <Input
+                      id="pan"
+                      value={formData.pan}
+                      onChange={(e) => handleInputChange("pan", e.target.value.toUpperCase())}
+                      placeholder="ABCDE1234F"
+                      maxLength={10}
+                      className="h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                      aria-invalid={!!formErrors.pan}
+                    />
+                    {formErrors.pan && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {formErrors.pan}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="photo" className="text-sm font-medium text-gray-700">
+                    Profile Photo
+                  </Label>
+                  <Input
+                    id="photo"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileChange("photo", e.target.files[0])}
+                    className="h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                    aria-invalid={!!formErrors.photo}
+                  />
+                  {formErrors.photo && (
+                    <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {formErrors.photo}
+                    </p>
+                  )}
+                  {formData.photoUrl && (
+                    <div className="mt-2">
+                      <img
+                        src={formData.photoUrl || "/placeholder.svg"}
+                        alt="Profile preview"
+                        className="w-20 h-20 object-cover rounded-lg border"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address" className="text-sm font-medium text-gray-700">
+                    Complete Address *
+                  </Label>
+                  <Input
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => handleInputChange("address", e.target.value)}
+                    placeholder="Enter complete address"
+                    className="h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                    aria-invalid={!!formErrors.address}
+                  />
+                  {formErrors.address && (
+                    <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {formErrors.address}
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="emergencyContactName" className="text-sm font-medium text-gray-700">
+                      Emergency Contact Name
+                    </Label>
+                    <Input
+                      id="emergencyContactName"
+                      value={formData.emergencyContactName}
+                      onChange={(e) => handleInputChange("emergencyContactName", e.target.value)}
+                      placeholder="Contact person name"
+                      className="h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="emergencyContactPhone" className="text-sm font-medium text-gray-700">
+                      Emergency Contact Phone
+                    </Label>
+                    <Input
+                      id="emergencyContactPhone"
+                      value={formData.emergencyContactPhone}
+                      onChange={(e) => handleInputChange("emergencyContactPhone", e.target.value.replace(/\D/g, ""))}
+                      placeholder="9876543210"
+                      maxLength={10}
+                      className="h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="emergencyContactRelation" className="text-sm font-medium text-gray-700">
+                      Relation
+                    </Label>
+                    <Input
+                      id="emergencyContactRelation"
+                      value={formData.emergencyContactRelation}
+                      onChange={(e) => handleInputChange("emergencyContactRelation", e.target.value)}
+                      placeholder="Father/Mother/Spouse"
+                      className="h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Banking Details */}
+            {currentStep === 3 && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="accountNumber" className="text-sm font-medium text-gray-700">
+                      Account Number *
+                    </Label>
+                    <Input
+                      id="accountNumber"
+                      value={formData.accountNumber}
+                      onChange={(e) => handleInputChange("accountNumber", e.target.value)}
+                      placeholder="Enter account number"
+                      className="h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                      aria-invalid={!!formErrors.accountNumber}
+                    />
+                    {formErrors.accountNumber && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {formErrors.accountNumber}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ifscCode" className="text-sm font-medium text-gray-700">
+                      IFSC Code *
+                    </Label>
+                    <Input
+                      id="ifscCode"
+                      value={formData.ifscCode}
+                      onChange={(e) => handleInputChange("ifscCode", e.target.value.toUpperCase())}
+                      placeholder="SBIN0001234"
+                      maxLength={11}
+                      className="h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                      aria-invalid={!!formErrors.ifscCode}
+                    />
+                    {formErrors.ifscCode && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {formErrors.ifscCode}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="bankName" className="text-sm font-medium text-gray-700">
+                      Bank Name *
+                    </Label>
+                    <Input
+                      id="bankName"
+                      value={formData.bankName}
+                      onChange={(e) => handleInputChange("bankName", e.target.value)}
+                      placeholder="State Bank of India"
+                      className="h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                      aria-invalid={!!formErrors.bankName}
+                    />
+                    {formErrors.bankName && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {formErrors.bankName}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="branch" className="text-sm font-medium text-gray-700">
+                      Branch Name *
+                    </Label>
+                    <Input
+                      id="branch"
+                      value={formData.branch}
+                      onChange={(e) => handleInputChange("branch", e.target.value)}
+                      placeholder="Main Branch"
+                      className="h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                      aria-invalid={!!formErrors.branch}
+                    />
+                    {formErrors.branch && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {formErrors.branch}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <p className="text-sm text-purple-700">
+                    <strong>Note:</strong> Banking details are required for salary processing. Please ensure all
+                    information is accurate.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Step 4: Employment Details */}
             {currentStep === 4 && (
               <div className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="employeeType" className="text-sm font-medium text-gray-700">
+                      Employee Type *
+                    </Label>
+                    <select
+                      id="employeeType"
+                      value={formData.employeeType}
+                      onChange={(e) => handleInputChange("employeeType", e.target.value)}
+                      className="h-12 w-full border border-gray-300 rounded-md px-3 focus:border-purple-500 focus:ring-purple-500"
+                    >
+                      <option value="full-time">Full Time</option>
+                      <option value="part-time">Part Time</option>
+                      <option value="contract">Contract</option>
+                      <option value="intern">Intern</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="department" className="text-sm font-medium text-gray-700">
+                      Department *
+                    </Label>
+                    <Input
+                      id="department"
+                      value={formData.department}
+                      onChange={(e) => handleInputChange("department", e.target.value)}
+                      placeholder="Sales"
+                      className="h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="designation" className="text-sm font-medium text-gray-700">
+                      Designation *
+                    </Label>
+                    <select
+                      id="designation"
+                      value={formData.designation}
+                      onChange={(e) => handleInputChange("designation", e.target.value)}
+                      className="h-12 w-full border border-gray-300 rounded-md px-3 focus:border-purple-500 focus:ring-purple-500"
+                    >
+                      <option value="Sales Executive">Sales Executive</option>
+                      <option value="Sales Associate">Sales Associate</option>
+                      <option value="Senior Sales Executive">Senior Sales Executive</option>
+                      <option value="Sales Representative">Sales Representative</option>
+                      <option value="Business Development Executive">Business Development Executive</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="experience" className="text-sm font-medium text-gray-700">
+                      Experience (Years) *
+                    </Label>
+                    <Input
+                      id="experience"
+                      type="number"
+                      value={formData.experience}
+                      onChange={(e) => handleInputChange("experience", e.target.value)}
+                      placeholder="2"
+                      min="0"
+                      max="50"
+                      className="h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="qualification" className="text-sm font-medium text-gray-700">
+                      Qualification *
+                    </Label>
+                    <select
+                      id="qualification"
+                      value={formData.qualification}
+                      onChange={(e) => handleInputChange("qualification", e.target.value)}
+                      className="h-12 w-full border border-gray-300 rounded-md px-3 focus:border-purple-500 focus:ring-purple-500"
+                    >
+                      <option value="">Select Qualification</option>
+                      <option value="10th">10th Pass</option>
+                      <option value="12th">12th Pass</option>
+                      <option value="Diploma">Diploma</option>
+                      <option value="Graduate">Graduate</option>
+                      <option value="Post Graduate">Post Graduate</option>
+                      <option value="MBA">MBA</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="previousCompany" className="text-sm font-medium text-gray-700">
+                      Previous Company
+                    </Label>
+                    <Input
+                      id="previousCompany"
+                      value={formData.previousCompany}
+                      onChange={(e) => handleInputChange("previousCompany", e.target.value)}
+                      placeholder="Previous company name (if any)"
+                      className="h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                    />
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="joiningDate" className="text-sm font-medium text-gray-700">
@@ -462,14 +816,21 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
                     <Label htmlFor="assignedZone" className="text-sm font-medium text-gray-700">
                       Assigned Zone *
                     </Label>
-                    <Input
+                    <select
                       id="assignedZone"
                       value={formData.assignedZone}
                       onChange={(e) => handleInputChange("assignedZone", e.target.value)}
-                      placeholder="e.g., North Zone, South Zone"
-                      className="h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                      className="h-12 w-full border border-gray-300 rounded-md px-3 focus:border-purple-500 focus:ring-purple-500"
                       aria-invalid={!!formErrors.assignedZone}
-                    />
+                    >
+                      <option value="">Select Zone</option>
+                      <option value="North Zone">North Zone</option>
+                      <option value="South Zone">South Zone</option>
+                      <option value="East Zone">East Zone</option>
+                      <option value="West Zone">West Zone</option>
+                      <option value="Central Zone">Central Zone</option>
+                      <option value="Metro Zone">Metro Zone</option>
+                    </select>
                     {formErrors.assignedZone && (
                       <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
@@ -497,6 +858,13 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
                       </p>
                     )}
                   </div>
+                </div>
+
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <p className="text-sm text-purple-700">
+                    <strong>Note:</strong> All employment details are required for proper onboarding and role
+                    assignment.
+                  </p>
                 </div>
               </div>
             )}
@@ -545,6 +913,39 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={showErrorModal} onOpenChange={setShowErrorModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="w-5 h-5" />
+              Error
+            </DialogTitle>
+            <DialogDescription className="text-gray-600">{modalMessage}</DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end">
+            <Button onClick={() => setShowErrorModal(false)} variant="outline">
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-600">
+              <CheckCircle className="w-5 h-5" />
+              Success!
+            </DialogTitle>
+            <DialogDescription className="text-gray-600">{modalMessage}</DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
     </>
   )
 }

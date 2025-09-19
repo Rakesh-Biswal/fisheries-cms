@@ -20,7 +20,7 @@ export default function SalesEmployeesPage() {
   const fetchSalesEmployees = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`${API_URL}/api/hr/sales-employee/fetch-data`, {
+      const response = await fetch(`${API_URL}/api/hr/sales-employees/fetch-data`, {
         credentials: "include",
       })
 
