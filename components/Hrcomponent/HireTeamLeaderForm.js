@@ -27,7 +27,7 @@ import { toast } from "../ui/use-toast"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
-export default function HireTeamLeaderForm({ onClose, onSuccess, currentHr }) {
+export default function HireTeamLeaderForm({ onClose, onSuccess}) {
     const [currentStep, setCurrentStep] = useState(1)
     const [loading, setLoading] = useState(false)
     const [uploadingImage, setUploadingImage] = useState(false)
@@ -241,7 +241,6 @@ export default function HireTeamLeaderForm({ onClose, onSuccess, currentHr }) {
         try {
             const submissionData = {
                 ...formData,
-                referredBy: currentHr,
                 emergencyContact: {
                     name: formData.emergencyContactName,
                     phone: formData.emergencyContactPhone,

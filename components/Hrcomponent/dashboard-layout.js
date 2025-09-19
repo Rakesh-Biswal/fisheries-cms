@@ -51,7 +51,7 @@ const menuItems = [
     items: [
       { name: "Team Leader", href: "/dashboard/hr/team-leader", icon: Settings },
       { name: "Accoutant", href: "/dashboard/hr/accountant", icon: Shield },
-      { name: "Project Manger", href: "/dashboard/hr/security", icon: Shield },
+      { name: "Project Manger", href: "/dashboard/hr/project-manager", icon: Shield },
       { name: "Sales Employee", href: "/dashboard/hr/salesemployee", icon: HelpCircle },
       { name: "Telecaller", href: "/dashboard/hr/telecaller", icon: HelpCircle },
     ],
