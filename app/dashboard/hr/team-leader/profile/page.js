@@ -14,43 +14,46 @@ import {
   Mail,
   Phone,
   User,
-  Clock,
-  Award,
+  DollarSign,
   TrendingUp,
   Users,
   Loader2,
-  Briefcase,
   Target,
   Calendar,
+  Building,
+  CreditCard,
+  MapPin,
+  Award,
+  Activity
 } from "lucide-react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
-export default function ProjectManagerProfilePage() {
+export default function SalesEmployeeProfilePage() {
   const searchParams = useSearchParams()
   const id = searchParams.get("id")
-  console.log("Project Manager Profile ID from URL:", id)
+  console.log("Sales Employee Profile ID from URL:", id)
   const router = useRouter()
-  const [projectManager, setProjectManager] = useState(null)
+  const [salesEmployee, setSalesEmployee] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const fetchProjectManagerProfile = async () => {
+  const fetchSalesEmployeeProfile = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`${API_URL}/api/hr/project-manager/profile/${id}`, {
+      const response = await fetch(`${API_URL}/api/hr/sales-employees/profile/${id}`, {
         method: "GET",
         credentials: "include",
       })
 
       if (response.ok) {
         const data = await response.json()
-        setProjectManager(data.data)
+        setSalesEmployee(data.data)
       } else {
-        throw new Error("Failed to fetch Project Manager profile")
+        throw new Error("Failed to fetch Sales Employee profile")
       }
     } catch (err) {
-      console.error("Error fetching Project Manager profile:", err)
+      console.error("Error fetching Sales Employee profile:", err)
       setError(err.message)
     } finally {
       setLoading(false)
@@ -59,7 +62,7 @@ export default function ProjectManagerProfilePage() {
 
   useEffect(() => {
     if (id) {
-      fetchProjectManagerProfile()
+      fetchSalesEmployeeProfile()
     }
   }, [id])
 
@@ -69,14 +72,14 @@ export default function ProjectManagerProfilePage() {
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading Project Manager profile...</p>
+            <p className="text-muted-foreground">Loading Sales Employee profile...</p>
           </div>
         </div>
       </DashboardLayout>
     )
   }
 
-  if (error || !projectManager) {
+  if (error || !salesEmployee) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-screen">
@@ -85,7 +88,7 @@ export default function ProjectManagerProfilePage() {
               <CardTitle className="text-red-600">Error</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground mb-4">{error || "Project Manager profile not found"}</p>
+              <p className="text-muted-foreground mb-4">{error || "Sales Employee profile not found"}</p>
               <Button onClick={() => router.back()}>Go Back</Button>
             </CardContent>
           </Card>
@@ -94,6 +97,10 @@ export default function ProjectManagerProfilePage() {
     )
   }
 
+  const targetAchievement = salesEmployee.businessData?.targetAchievementRate || 0
+  const currentSales = salesEmployee.businessData?.currentMonthSales || 0
+  const monthlyTarget = salesEmployee.businessData?.monthlyTarget || 0
+
   return (
     <DashboardLayout>
       <div className="space-y-6 p-6">
@@ -101,7 +108,7 @@ export default function ProjectManagerProfilePage() {
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={() => router.back()}>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Project Managers
+            Back to Sales Employees
           </Button>
         </div>
 
@@ -111,49 +118,49 @@ export default function ProjectManagerProfilePage() {
             <div className="flex flex-col md:flex-row gap-6">
               <div className="flex flex-col items-center md:items-start">
                 <Avatar className="w-24 h-24 mb-4">
-                  <AvatarImage src={projectManager.photo || "/placeholder.svg"} />
+                  <AvatarImage src={salesEmployee.photo || "/placeholder.svg"} />
                   <AvatarFallback className="text-2xl">
-                    {projectManager.name
+                    {salesEmployee.name
                       .split(" ")
                       .map((n) => n[0])
                       .join("")}
                   </AvatarFallback>
                 </Avatar>
-                <Badge variant={projectManager.status === "active" ? "default" : "secondary"} className="mb-2">
-                  {projectManager.status}
+                <Badge variant={salesEmployee.status === "active" ? "default" : "secondary"} className="mb-2">
+                  {salesEmployee.status}
                 </Badge>
               </div>
 
               <div className="flex-1 space-y-4">
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-bold">{projectManager.name}</h1>
+                  <h1 className="text-2xl md:text-3xl font-bold">{salesEmployee.name}</h1>
                   <p className="text-lg text-muted-foreground">
-                    {projectManager.businessData?.designation || "Project Manager"}
+                    {salesEmployee.businessData?.designation || "Sales Executive"}
                   </p>
-                  <p className="text-sm text-muted-foreground">Employee ID: {projectManager.empCode}</p>
+                  <p className="text-sm text-muted-foreground">Employee ID: {salesEmployee.empCode}</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">{projectManager.companyEmail}</span>
+                    <span className="text-sm">{salesEmployee.companyEmail}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">{projectManager.phone}</span>
+                    <span className="text-sm">{salesEmployee.phone}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <span className="text-sm">
                       Joined:{" "}
-                      {projectManager.businessData?.joiningDate
-                        ? new Date(projectManager.businessData.joiningDate).toLocaleDateString()
+                      {salesEmployee.businessData?.joiningDate
+                        ? new Date(salesEmployee.businessData.joiningDate).toLocaleDateString()
                         : "N/A"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">{projectManager.businessData?.employeeType}</span>
+                    <span className="text-sm">{salesEmployee.businessData?.employeeType}</span>
                   </div>
                 </div>
               </div>
@@ -170,27 +177,32 @@ export default function ProjectManagerProfilePage() {
             <CardContent className="space-y-4">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Full Name:</span>
-                <span className="font-medium">{projectManager.name}</span>
+                <span className="font-medium">{salesEmployee.name}</span>
               </div>
               <Separator />
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Phone:</span>
-                <span className="font-medium">{projectManager.phone}</span>
+                <span className="font-medium">{salesEmployee.phone}</span>
               </div>
               <Separator />
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Company Email:</span>
-                <span className="font-medium">{projectManager.companyEmail}</span>
+                <span className="font-medium">{salesEmployee.companyEmail}</span>
+              </div>
+              <Separator />
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Personal Email:</span>
+                <span className="font-medium">{salesEmployee.personalEmail || "Not provided"}</span>
               </div>
               <Separator />
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Aadhar Number:</span>
-                <span className="font-medium">****-****-{projectManager.aadhar?.slice(-4) || "****"}</span>
+                <span className="font-medium">****-****-{salesEmployee.aadhar?.slice(-4) || "****"}</span>
               </div>
               <Separator />
               <div className="flex justify-between">
                 <span className="text-muted-foreground">PAN Number:</span>
-                <span className="font-medium">{projectManager.pan || "Not provided"}</span>
+                <span className="font-medium">{salesEmployee.pan || "Not provided"}</span>
               </div>
             </CardContent>
           </Card>
@@ -202,63 +214,63 @@ export default function ProjectManagerProfilePage() {
             <CardContent className="space-y-4">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Employee Code:</span>
-                <span className="font-medium">{projectManager.empCode}</span>
+                <span className="font-medium">{salesEmployee.empCode}</span>
               </div>
               <Separator />
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Department:</span>
-                <span className="font-medium">{projectManager.businessData?.department || "Project Management"}</span>
+                <span className="font-medium">{salesEmployee.businessData?.department || "Sales"}</span>
               </div>
               <Separator />
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Employee Type:</span>
-                <span className="font-medium">{projectManager.businessData?.employeeType}</span>
+                <span className="font-medium">{salesEmployee.businessData?.employeeType}</span>
               </div>
               <Separator />
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Joining Date:</span>
                 <span className="font-medium">
-                  {projectManager.businessData?.joiningDate
-                    ? new Date(projectManager.businessData.joiningDate).toLocaleDateString()
+                  {salesEmployee.businessData?.joiningDate
+                    ? new Date(salesEmployee.businessData.joiningDate).toLocaleDateString()
                     : "N/A"}
                 </span>
               </div>
               <Separator />
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Status:</span>
-                <Badge variant={projectManager.status === "active" ? "default" : "secondary"}>
-                  {projectManager.status}
+                <Badge variant={salesEmployee.status === "active" ? "default" : "secondary"}>
+                  {salesEmployee.status}
                 </Badge>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Project Management Details */}
+        {/* Sales Details */}
         <Card>
           <CardHeader>
-            <CardTitle>Project Management Details</CardTitle>
+            <CardTitle>Sales Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Assigned Domain:</span>
+                <span className="text-muted-foreground">Assigned Zone:</span>
                 <span className="font-medium flex items-center">
-                  <Briefcase className="w-4 h-4 mr-1" />
-                  {projectManager.businessData?.assignedDomain || "Not assigned"}
+                  <MapPin className="w-4 h-4 mr-1" />
+                  {salesEmployee.businessData?.assignedZone || "Not assigned"}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Team Size:</span>
-                <span className="font-medium">{projectManager.businessData?.teamSize || 0} members</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Active Projects:</span>
-                <span className="font-medium">{projectManager.businessData?.activeProjects || 0} projects</span>
-              </div>
-              <div className="flex justify-between">
                 <span className="text-muted-foreground">Monthly Target:</span>
-                <span className="font-medium">{projectManager.businessData?.monthlyProjectTarget || 0} projects</span>
+                <span className="font-medium">₹{salesEmployee.businessData?.monthlyTarget?.toLocaleString() || 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Current Month Sales:</span>
+                <span className="font-medium">₹{currentSales.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total Sales:</span>
+                <span className="font-medium">₹{salesEmployee.businessData?.totalSales?.toLocaleString() || 0}</span>
               </div>
             </div>
           </CardContent>
@@ -269,93 +281,132 @@ export default function ProjectManagerProfilePage() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center">
-                <Clock className="w-4 h-4 mr-2 text-blue-500" />
-                Project Completion Rate
+                <Target className="w-4 h-4 mr-2 text-blue-500" />
+                Target Achievement
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">92.3%</div>
-              <Progress value={92.3} className="mt-2" />
-              <p className="text-xs text-muted-foreground mt-1">Above target (85%)</p>
+              <div className="text-2xl font-bold text-blue-600">{targetAchievement}%</div>
+              <Progress value={targetAchievement} className="mt-2" />
+              <p className="text-xs text-muted-foreground mt-1">
+                Target: ₹{monthlyTarget.toLocaleString()}
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center">
-                <Award className="w-4 h-4 mr-2 text-yellow-500" />
-                Performance Score
+                <DollarSign className="w-4 h-4 mr-2 text-green-500" />
+                Current Month Sales
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">8.9/10</div>
-              <Progress value={89} className="mt-2" />
-              <p className="text-xs text-muted-foreground mt-1">Excellent performance</p>
+              <div className="text-2xl font-bold text-green-600">₹{currentSales.toLocaleString()}</div>
+              <Progress value={(currentSales/monthlyTarget)*100} className="mt-2" />
+              <p className="text-xs text-muted-foreground mt-1">
+                {((currentSales/monthlyTarget)*100).toFixed(1)}% of target
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center">
-                <Users className="w-4 h-4 mr-2 text-green-500" />
-                Team Satisfaction
+                <TrendingUp className="w-4 h-4 mr-2 text-purple-500" />
+                Total Sales
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">9.1/10</div>
-              <Progress value={91} className="mt-2" />
-              <p className="text-xs text-muted-foreground mt-1">High team satisfaction</p>
+              <div className="text-2xl font-bold text-purple-600">
+                ₹{salesEmployee.businessData?.totalSales?.toLocaleString() || 0}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Lifetime sales performance</p>
             </CardContent>
           </Card>
         </div>
+
+        {/* Banking Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <CreditCard className="w-5 h-5 mr-2" />
+              Banking Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Bank Name:</span>
+                <span className="font-medium">{salesEmployee.bankAccount?.bankName || "Not provided"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Account Number:</span>
+                <span className="font-medium">
+                  {salesEmployee.bankAccount?.accountNumber 
+                    ? `****${salesEmployee.bankAccount.accountNumber.slice(-4)}` 
+                    : "Not provided"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">IFSC Code:</span>
+                <span className="font-medium">{salesEmployee.bankAccount?.ifscCode || "Not provided"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Branch:</span>
+                <span className="font-medium">{salesEmployee.bankAccount?.branch || "Not provided"}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Recent Activities */}
         <Card>
           <CardHeader>
             <CardTitle>Recent Activities</CardTitle>
-            <CardDescription>Latest project management activities and achievements</CardDescription>
+            <CardDescription>Latest sales activities and achievements</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
                 <Award className="w-5 h-5 text-yellow-500 mt-0.5" />
                 <div>
-                  <p className="font-medium">Completed Project Management Certification</p>
+                  <p className="font-medium">Exceeded Monthly Sales Target</p>
                   <p className="text-sm text-muted-foreground">
-                    Successfully completed advanced project management certification (PMP)
+                    Achieved {targetAchievement}% of monthly sales target
                   </p>
                   <p className="text-xs text-muted-foreground">3 days ago</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                <Target className="w-5 h-5 text-blue-500 mt-0.5" />
+                <DollarSign className="w-5 h-5 text-green-500 mt-0.5" />
                 <div>
-                  <p className="font-medium">Delivered E-commerce Platform Project</p>
+                  <p className="font-medium">Closed Major Deal</p>
                   <p className="text-sm text-muted-foreground">
-                    Successfully delivered major e-commerce platform 2 weeks ahead of schedule
+                    Secured a corporate contract worth ₹2,50,000
                   </p>
                   <p className="text-xs text-muted-foreground">1 week ago</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-green-500 mt-0.5" />
+                <TrendingUp className="w-5 h-5 text-blue-500 mt-0.5" />
                 <div>
-                  <p className="font-medium">Improved Team Productivity</p>
+                  <p className="font-medium">New Client Acquisition</p>
                   <p className="text-sm text-muted-foreground">
-                    Implemented new project tracking system increasing team productivity by 25%
+                    Added 5 new clients to the portfolio
                   </p>
                   <p className="text-xs text-muted-foreground">2 weeks ago</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                <Users className="w-5 h-5 text-purple-500 mt-0.5" />
+                <MapPin className="w-5 h-5 text-purple-500 mt-0.5" />
                 <div>
-                  <p className="font-medium">Onboarded New Team Members</p>
+                  <p className="font-medium">Zone Expansion</p>
                   <p className="text-sm text-muted-foreground">
-                    Successfully onboarded 3 new developers to the mobile app development team
+                    Expanded sales operations to new territory
                   </p>
                   <p className="text-xs text-muted-foreground">3 weeks ago</p>
                 </div>

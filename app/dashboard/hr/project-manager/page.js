@@ -8,10 +8,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Users, Plus, Briefcase, TrendingUp } from "lucide-react"
 import DashboardLayout from "@/components/Hrcomponent/dashboard-layout"
 import HireProjectManagerForm from "@/components/HrComponent/HireProjectManagerForm"
+import { useRouter } from "next/navigation"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
 export default function ProjectManagersPage() {
+  const router = useRouter()
   const [projectManagers, setProjectManagers] = useState([])
   const [loading, setLoading] = useState(true)
   const [showHireForm, setShowHireForm] = useState(false)
@@ -46,6 +48,10 @@ export default function ProjectManagersPage() {
     // Refresh data and close takeover view
     fetchProjectManagers()
     setShowHireForm(false)
+  }
+
+  const handleViewDetails = (managerId) => {
+    router.push(`/dashboard/hr/project-manager/profile?id=${managerId}`)
   }
 
   if (loading) {
@@ -165,7 +171,12 @@ export default function ProjectManagersPage() {
                         <Badge variant={manager.status === "active" ? "default" : "secondary"}>{manager.status}</Badge>
                       </div>
                       <div className="pt-3 border-t">
-                        <Button variant="outline" size="sm" className="w-full bg-transparent">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full bg-transparent"
+                          onClick={() => handleViewDetails(manager._id)}
+                        >
                           View Details
                         </Button>
                       </div>

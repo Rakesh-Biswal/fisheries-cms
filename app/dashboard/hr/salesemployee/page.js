@@ -8,10 +8,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Users, Plus, Target, MapPin, TrendingUp } from "lucide-react"
 import DashboardLayout from "@/components/Hrcomponent/dashboard-layout"
 import HireSalesEmployeeForm from "@/components/HrComponent/HireSalesEmployeeForm"
+import { useRouter } from "next/navigation"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
 export default function SalesEmployeesPage() {
+  const router = useRouter()
   const [salesEmployees, setSalesEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [showHireForm, setShowHireForm] = useState(false)
@@ -46,6 +48,10 @@ export default function SalesEmployeesPage() {
     // Refresh data and close takeover view
     fetchSalesEmployees()
     setShowHireForm(false)
+  }
+
+  const handleViewDetails = (managerId) => {
+    router.push(`/dashboard/hr/salesemployee/profile?id=${managerId}`)
   }
 
   if (loading) {
@@ -158,7 +164,12 @@ export default function SalesEmployeesPage() {
                         </Badge>
                       </div>
                       <div className="pt-3 border-t">
-                        <Button variant="outline" size="sm" className="w-full bg-transparent">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full bg-transparent"
+                          onClick={() => handleViewDetails(employee._id)}
+                        >
                           View Details
                         </Button>
                       </div>
