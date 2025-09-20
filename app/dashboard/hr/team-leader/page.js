@@ -8,10 +8,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Users, Plus, Target, MapPin, TrendingUp, ArrowLeft } from "lucide-react"
 import DashboardLayout from "@/components/Hrcomponent/dashboard-layout"
 import HireTeamLeaderForm from "@/components/HrComponent/HireTeamLeaderForm"
+import { useRouter } from "next/navigation"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
 export default function TeamLeadersPage() {
+  const router = useRouter()
   const [teamLeaders, setTeamLeaders] = useState([])
   const [loading, setLoading] = useState(true)
   const [showHireForm, setShowHireForm] = useState(false)
@@ -46,6 +48,10 @@ export default function TeamLeadersPage() {
     // Refresh data and close takeover view
     fetchTeamLeaders()
     setShowHireForm(false)
+  }
+
+  const handleViewDetails = (managerId) => {
+    router.push(`/dashboard/hr/team-leader/profile?id=${managerId}`)
   }
 
   if (loading) {
@@ -159,7 +165,12 @@ export default function TeamLeadersPage() {
                         <Badge variant={leader.status === "active" ? "default" : "secondary"}>{leader.status}</Badge>
                       </div>
                       <div className="pt-3 border-t">
-                        <Button variant="outline" size="sm" className="w-full">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full bg-transparent"
+                          onClick={() => handleViewDetails(leader._id)}
+                        >
                           View Details
                         </Button>
                       </div>

@@ -8,10 +8,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Users, Plus, Calculator, Building, TrendingUp } from "lucide-react"
 import DashboardLayout from "@/components/Hrcomponent/dashboard-layout"
 import HireAccountantForm from "@/components/Hrcomponent/HireAccountantForm"
+import { useRouter } from "next/navigation"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
 export default function AccountantsPage() {
+  const router = useRouter()
   const [accountants, setAccountants] = useState([])
   const [loading, setLoading] = useState(true)
   const [showHireForm, setShowHireForm] = useState(false)
@@ -47,6 +49,10 @@ export default function AccountantsPage() {
     // Refresh data and close takeover view
     fetchAccountants()
     setShowHireForm(false)
+  }
+
+  const handleViewDetails = (managerId) => {
+    router.push(`/dashboard/hr/accountant/profile?id=${managerId}`)
   }
 
   if (loading) {
@@ -157,7 +163,12 @@ export default function AccountantsPage() {
                         </Badge>
                       </div>
                       <div className="pt-3 border-t">
-                        <Button variant="outline" size="sm" className="w-full bg-transparent">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full bg-transparent"
+                          onClick={() => handleViewDetails(accountant._id)}
+                        >
                           View Details
                         </Button>
                       </div>
