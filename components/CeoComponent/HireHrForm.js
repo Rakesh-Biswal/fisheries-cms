@@ -12,7 +12,7 @@ import { User, CreditCard, FileText, Camera, ArrowLeft, ArrowRight, Check, Loade
 import { toast } from "../ui/use-toast"
 import { uploadToR2 } from "../../lib/cloudflare-r2"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function HireHrForm({ onClose, onSuccess }) {
     const [currentStep, setCurrentStep] = useState(1)
