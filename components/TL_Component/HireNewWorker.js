@@ -220,7 +220,7 @@ export default function HireWorkerForm({
       };
 
       // POST to local API route
-      const res = await fetch(`http://localhost:${process.env.PORT}/api/employees`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teamleader/teams`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
