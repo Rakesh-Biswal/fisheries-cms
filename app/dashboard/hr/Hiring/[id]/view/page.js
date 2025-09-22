@@ -22,6 +22,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter, useParams } from "next/navigation";
@@ -32,6 +33,9 @@ export default function JobDashboard() {
   const [jobDetails, setJobDetails] = useState(null);
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showAdvanceDialog, setShowAdvanceDialog] = useState(false);
+  const [advancingStatus, setAdvancingStatus] = useState("");
+  const [updating, setUpdating] = useState(false);
   const router = useRouter();
   const params = useParams();
   const jobId = params.id;
@@ -115,11 +119,102 @@ export default function JobDashboard() {
     }
   };
 
+  const getNextStatus = (currentStatus) => {
+    switch (currentStatus) {
+      case "pending":
+        return "reviewed";
+      case "reviewed":
+        return "interview";
+      case "interview":
+        return "hired";
+      default:
+        return currentStatus;
+    }
+  };
+
+  const getStatusDisplayName = (status) => {
+    switch (status) {
+      case "pending":
+        return "Applied";
+      case "reviewed":
+        return "Shortlisted";
+      case "interview":
+        return "Interview";
+      case "hired":
+        return "Hired";
+      default:
+        return status;
+    }
+  };
+
   const getStatusCount = (status) => {
     if (status === "all") return candidates.length;
     return candidates.filter(
       (c) => c.status.toLowerCase() === status.toLowerCase()
     ).length;
+  };
+
+  const handleAdvanceStatus = async () => {
+    if (!selectedCandidate) return;
+
+    try {
+      setUpdating(true);
+      const nextStatus = getNextStatus(selectedCandidate.status);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/client/job-applications/${selectedCandidate._id}/advance-status`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: nextStatus,
+            stageNote: `Advanced from ${selectedCandidate.status} to ${nextStatus}`,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Update the candidate in the local state
+        setCandidates(
+          candidates.map((candidate) =>
+            candidate._id === selectedCandidate._id
+              ? {
+                  ...candidate,
+                  status: nextStatus,
+                  stageHistory: result.data.stageHistory,
+                }
+              : candidate
+          )
+        );
+
+        // Update the selected candidate
+        setSelectedCandidate({
+          ...selectedCandidate,
+          status: nextStatus,
+          stageHistory: result.data.stageHistory,
+        });
+
+        setShowAdvanceDialog(false);
+      } else {
+        console.error("Failed to advance status:", result.error);
+      }
+    } catch (error) {
+      console.error("Error advancing status:", error);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const openAdvanceDialog = () => {
+    if (!selectedCandidate) return;
+
+    const nextStatus = getNextStatus(selectedCandidate.status);
+    setAdvancingStatus(nextStatus);
+    setShowAdvanceDialog(true);
   };
 
   const filteredCandidates =
@@ -156,6 +251,20 @@ export default function JobDashboard() {
     }
 
     return `${age} Years Old`;
+  };
+
+  // Get stage history for display
+  const getStageHistory = (candidate) => {
+    if (!candidate.stageHistory || candidate.stageHistory.length === 0) {
+      return [
+        {
+          stage: "pending",
+          date: candidate.appliedDate || candidate.createdAt,
+          note: "Applied for the position",
+        },
+      ];
+    }
+    return candidate.stageHistory;
   };
 
   if (loading) {
@@ -576,22 +685,12 @@ export default function JobDashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm">
-                    <Minimize2 className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm">
-                    <ChevronDown className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm">
-                    <Maximize2 className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedCandidate(null)}
+                  <button
+                    onClick={openAdvanceDialog}
+                    className="justify-between p-2 h-fit w-fit text-blue-700 cursor-pointer"
                   >
-                    <X className="w-4 h-4" />
-                  </Button>
+                    Advance to Next step
+                  </button>
                 </div>
               </DialogHeader>
 
@@ -685,24 +784,36 @@ export default function JobDashboard() {
                       Stages
                     </div>
                     <div className="space-y-3">
-                      <div className="flex items-center gap-3 text-sm">
-                        <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
-                        <div className="text-left">
-                          <div className="font-medium">Job applied</div>
-                          <div className="text-xs text-gray-500">
-                            {formatDate(selectedCandidate.appliedDate)}
+                      {getStageHistory(selectedCandidate).map(
+                        (stage, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center gap-3 text-sm"
+                          >
+                            <div
+                              className={`w-3 h-3 ${
+                                stage.stage === "pending"
+                                  ? "bg-blue-500"
+                                  : stage.stage === "reviewed"
+                                    ? "bg-green-500"
+                                    : stage.stage === "interview"
+                                      ? "bg-orange-500"
+                                      : stage.stage === "hired"
+                                        ? "bg-purple-500"
+                                        : "bg-gray-300"
+                              } rounded-full flex-shrink-0`}
+                            ></div>
+                            <div className="text-left">
+                              <div className="font-medium capitalize">
+                                {getStatusDisplayName(stage.stage)}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {formatDate(stage.date)}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm">
-                        <div className="w-3 h-3 bg-gray-300 rounded-full flex-shrink-0"></div>
-                        <div className="text-left">
-                          <div className="font-medium">Job Posted</div>
-                          <div className="text-xs text-gray-500">
-                            {formatDate(jobDetails.postedDate)}
-                          </div>
-                        </div>
-                      </div>
+                        )
+                      )}
                     </div>
                   </div>
                 </div>
@@ -946,13 +1057,59 @@ export default function JobDashboard() {
                   <Button variant="outline" className="flex-1 bg-transparent">
                     💬 Send Message
                   </Button>
-                  <Button className="flex-1 bg-orange-500 hover:bg-orange-600 text-white">
+                  <Button
+                    onClick={openAdvanceDialog}
+                    className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+                  >
                     📅 Schedule Interview ▼
                   </Button>
                 </div>
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+      {/* Advance Status Confirmation Dialog */}
+      <Dialog open={showAdvanceDialog} onOpenChange={setShowAdvanceDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Advance Candidate Status</DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4">
+            <p className="text-gray-700 mb-2">
+              The candidate is currently in{" "}
+              <span className="font-semibold capitalize">
+                {getStatusDisplayName(selectedCandidate?.status)}
+              </span>{" "}
+              status.
+            </p>
+            <p>
+              Do you want to advance them to{" "}
+              <span className="font-semibold capitalize">
+                {getStatusDisplayName(advancingStatus)}
+              </span>
+              ?
+            </p>
+          </div>
+
+          <DialogFooter className="sm:justify-end">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowAdvanceDialog(false)}
+              disabled={updating}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleAdvanceStatus}
+              disabled={updating}
+            >
+              {updating ? "Processing..." : "Proceed"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
