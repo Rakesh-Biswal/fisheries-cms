@@ -129,9 +129,9 @@ export default function TeamLeadersPage() {
       leaderEmail: team.leaderEmail
     }).toString()
     
-    router.push(`/dashboard/hr/team-leader/team-details?${queryParams}`)
+    router.push(`/dashboard/hr/profile/team-details?${queryParams}`)
   }
-//dashboard/hr/team-leader
+
   const handleCreateTeam = () => {
     if (!newTeam.name || !newTeam.title || !newTeam.leader) {
       toast.error("Please fill all fields")

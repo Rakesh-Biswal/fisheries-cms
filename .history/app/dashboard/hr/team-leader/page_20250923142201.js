@@ -129,7 +129,7 @@ export default function TeamLeadersPage() {
       leaderEmail: team.leaderEmail
     }).toString()
     
-    router.push(`/dashboard/hr/team-leader/team-details?${queryParams}`)
+    router.push(`/team-leader/profile/team-details?${queryParams}`)
   }
 //dashboard/hr/team-leader
   const handleCreateTeam = () => {
