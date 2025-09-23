@@ -15,7 +15,6 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
 export default function TeamLeadersPage() {
@@ -129,9 +128,9 @@ export default function TeamLeadersPage() {
       leaderEmail: team.leaderEmail
     }).toString()
     
-    router.push(`/dashboard/hr/team-leader/team-details?${queryParams}`)
+    router.push(`/dashboard/hr/team-details?${queryParams}`)
   }
-//dashboard/hr/team-leader
+
   const handleCreateTeam = () => {
     if (!newTeam.name || !newTeam.title || !newTeam.leader) {
       toast.error("Please fill all fields")

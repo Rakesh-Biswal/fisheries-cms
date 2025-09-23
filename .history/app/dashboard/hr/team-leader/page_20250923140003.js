@@ -15,7 +15,6 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
 export default function TeamLeadersPage() {
@@ -25,6 +24,9 @@ export default function TeamLeadersPage() {
   const [loading, setLoading] = useState(true)
   const [showHireForm, setShowHireForm] = useState(false)
   const [showTeamForm, setShowTeamForm] = useState(false)
+  const [showTeamDetails, setShowTeamDetails] = useState(false)
+  const [showAssignEmployee, setShowAssignEmployee] = useState(false)
+  const [selectedTeam, setSelectedTeam] = useState(null)
   const [availableEmployees, setAvailableEmployees] = useState([])
   const [selectedEmployee, setSelectedEmployee] = useState("")
   const [error, setError] = useState(null)
@@ -118,20 +120,11 @@ export default function TeamLeadersPage() {
     router.push(`/dashboard/hr/team-leader/profile?id=${managerId}`)
   }
 
-  const handleManageTeam = (team) => {
-    // Redirect to team details page with team data as query parameters
-    const queryParams = new URLSearchParams({
-      id: team.id,
-      name: team.name,
-      title: team.title,
-      leaderId: team.leaderId,
-      leaderName: team.leaderName,
-      leaderEmail: team.leaderEmail
-    }).toString()
-    
-    router.push(`/dashboard/hr/team-leader/team-details?${queryParams}`)
+  const handleViewTeamDetails = (team) => {
+    setSelectedTeam(team)
+    setShowTeamDetails(true)
   }
-//dashboard/hr/team-leader
+
   const handleCreateTeam = () => {
     if (!newTeam.name || !newTeam.title || !newTeam.leader) {
       toast.error("Please fill all fields")
@@ -159,6 +152,42 @@ export default function TeamLeadersPage() {
     setNewTeam({ name: "", title: "", leader: "" })
     setShowTeamForm(false)
     toast.success("Team created successfully!")
+  }
+
+  const handleAssignEmployee = () => {
+    if (!selectedEmployee) {
+      toast.error("Please select an employee")
+      return
+    }
+    
+    const employee = availableEmployees.find(emp => emp.id === selectedEmployee)
+    if (!employee) {
+      toast.error("Employee not found")
+      return
+    }
+    
+    const updatedTeams = teams.map(team => {
+      if (team.id === selectedTeam.id) {
+        // Check if employee is already in the team
+        if (team.members.some(member => member.id === employee.id)) {
+          toast.error("Employee is already in this team")
+          return team
+        }
+        
+        const updatedTeam = {
+          ...team,
+          size: team.size + 1,
+          members: [...team.members, employee]
+        }
+        return updatedTeam
+      }
+      return team
+    })
+    
+    setTeams(updatedTeams)
+    setSelectedEmployee("")
+    setShowAssignEmployee(false)
+    toast.success("Employee assigned to team successfully!")
   }
 
   const getStatusVariant = (status) => {
@@ -281,7 +310,7 @@ export default function TeamLeadersPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleManageTeam(team)}
+                            onClick={() => handleViewTeamDetails(team)}
                           >
                             Manage
                           </Button>
@@ -426,6 +455,129 @@ export default function TeamLeadersPage() {
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => setShowTeamForm(false)}>Cancel</Button>
             <Button onClick={handleCreateTeam}>Create</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Team Details Modal */}
+      <Dialog open={showTeamDetails} onOpenChange={setShowTeamDetails}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex justify-between items-center">
+              <span>{selectedTeam?.name} Team Details</span>
+              <Button variant="ghost" size="icon" onClick={() => setShowTeamDetails(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+            <DialogDescription>
+              {selectedTeam?.title}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedTeam && (
+            <div className="space-y-6">
+              {/* Team Leader Info */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Team Leader</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center space-x-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={selectedTeam.leaderAvatar} />
+                      <AvatarFallback>
+                        {selectedTeam.leaderName?.split(" ").map((n) => n[0]).join("").toUpperCase() || "TL"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="font-semibold">{selectedTeam.leaderName}</h3>
+                      <p className="text-sm text-muted-foreground">{selectedTeam.leaderEmail}</p>
+                      <div className="flex mt-2 space-x-2">
+                        <Button variant="outline" size="sm">
+                          <Mail className="h-4 w-4 mr-1" />
+                          Message
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Phone className="h-4 w-4 mr-1" />
+                          Call
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Team Members List */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle>Team Members ({selectedTeam.size || 0})</CardTitle>
+                  <Button 
+                    size="sm" 
+                    onClick={() => {
+                      fetchAvailableEmployees();
+                      setShowAssignEmployee(true);
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Assign Employee
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {selectedTeam.members && selectedTeam.members.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {selectedTeam.members.map((member) => (
+                        <Card key={member.id} className="p-4 flex items-center gap-4">
+                          <Avatar className="h-10 w-10">
+                            <AvatarFallback>{member.avatar}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <h3 className="font-semibold">{member.name}</h3>
+                            <p className="text-sm text-muted-foreground">{member.email}</p>
+                            <p className="text-sm">{member.position}</p>
+                            <div className="flex gap-2 mt-1">
+                              <Badge variant="outline" className={getLevelColor(member.level)}>{member.level}</Badge>
+                              <Badge variant={getStatusVariant(member.status)}>{member.status}</Badge>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">No team members yet.</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Employee Modal */}
+      <Dialog open={showAssignEmployee} onOpenChange={setShowAssignEmployee}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Employee to {selectedTeam?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Select
+              value={selectedEmployee}
+              onValueChange={setSelectedEmployee}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select employee" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableEmployees.map((emp) => (
+                  <SelectItem key={emp.id} value={emp.id}>
+                    {emp.name} - {emp.position}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowAssignEmployee(false)}>Cancel</Button>
+            <Button onClick={handleAssignEmployee}>Assign</Button>
           </div>
         </DialogContent>
       </Dialog>
