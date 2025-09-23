@@ -15,6 +15,7 @@ const TalentListPanel = ({
   getStatusCount,
   getStatusDisplay,
   getStatusColor,
+  getStatusBadge,
   getNextActions,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -26,6 +27,52 @@ const TalentListPanel = ({
         .includes(searchTerm.toLowerCase()) ||
       candidate.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Fix the work status badge function in TalentListPanel.js:
+  const getWorkStatusBadge = (candidate) => {
+    if (candidate.status !== "hired" || !candidate.postHireInfo) return null;
+
+    const today = new Date();
+    const trainingStart = candidate.postHireInfo.trainingStartDate
+      ? new Date(candidate.postHireInfo.trainingStartDate)
+      : null;
+    const trainingEnd = candidate.postHireInfo.trainingEndDate
+      ? new Date(candidate.postHireInfo.trainingEndDate)
+      : null;
+    const fieldWorkStart = candidate.postHireInfo.fieldWorkStartDate
+      ? new Date(candidate.postHireInfo.fieldWorkStartDate)
+      : null;
+    const fieldWorkEnd = candidate.postHireInfo.fieldWorkEndDate
+      ? new Date(candidate.postHireInfo.fieldWorkEndDate)
+      : null;
+
+    // Check if dates are valid
+    if (
+      trainingStart &&
+      trainingEnd &&
+      today >= trainingStart &&
+      today <= trainingEnd
+    ) {
+      return { text: "🏋️ Training", color: "bg-blue-500 text-white" };
+    }
+    if (
+      fieldWorkStart &&
+      fieldWorkEnd &&
+      today >= fieldWorkStart &&
+      today <= fieldWorkEnd
+    ) {
+      return { text: "🌱 Field Work", color: "bg-green-500 text-white" };
+    }
+    if (
+      fieldWorkEnd &&
+      today > fieldWorkEnd &&
+      candidate.postHireInfo.fieldWorkCompleted
+    ) {
+      return { text: "✅ Temp Employee", color: "bg-purple-500 text-white" };
+    }
+
+    return null;
+  };
 
   const calculateAge = (birthdate) => {
     if (!birthdate) return "N/A";
@@ -99,94 +146,132 @@ const TalentListPanel = ({
           </div>
         </div>
 
-        {/* Candidates Table */}
+        {/* Candidates Table - Updated to 7 columns */}
         <div className="bg-white rounded-lg border border-gray-200">
-          <div className="grid grid-cols-6 gap-4 p-4 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <div className="grid grid-cols-7 gap-4 p-4 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wider">
             <div>Name</div>
             <div>Expected Salary</div>
             <div>Experience</div>
             <div>Rating</div>
             <div>Status</div>
+            <div>Work Status</div> {/* NEW COLUMN */}
             <div className="text-right">Actions</div>
           </div>
 
           <div className="divide-y divide-gray-200">
-            {filteredCandidates.map((candidate) => (
-              <div
-                key={candidate._id}
-                className="grid grid-cols-6 gap-4 p-4 hover:bg-gray-50 cursor-pointer"
-                onClick={() => onCandidateSelect(candidate)}
-              >
-                <div className="flex items-center gap-3">
-                  <Avatar className="w-10 h-10">
-                    <AvatarImage src={candidate.avatar} />
-                    <AvatarFallback>
-                      {candidate.firstName?.[0]}
-                      {candidate.lastName?.[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium text-gray-900">
-                      {candidate.firstName} {candidate.lastName}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {candidate.gender || "Not specified"} •{" "}
-                      {calculateAge(candidate.dateOfBirth)}
+            {filteredCandidates.map((candidate) => {
+              const statusBadge = getStatusBadge
+                ? getStatusBadge(candidate)
+                : null;
+              const workStatusBadge = getWorkStatusBadge(candidate); // NEW
+
+              return (
+                <div
+                  key={candidate._id}
+                  className="grid grid-cols-7 gap-4 p-4 hover:bg-gray-50 cursor-pointer"
+                  onClick={() => onCandidateSelect(candidate)}
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={candidate.avatar} />
+                      <AvatarFallback>
+                        {candidate.firstName?.[0]}
+                        {candidate.lastName?.[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="font-medium text-gray-900">
+                        {candidate.firstName} {candidate.lastName}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {candidate.gender || "Not specified"} •{" "}
+                        {calculateAge(candidate.dateOfBirth)}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center text-sm text-gray-900">
-                  {candidate.expectedSalary || "Not specified"}
-                </div>
+                  <div className="flex items-center text-sm text-gray-900">
+                    {candidate.expectedSalary || "Not specified"}
+                  </div>
 
-                <div className="flex items-center text-sm text-gray-900">
-                  {getExperienceYears(candidate.workExperiences)}
-                </div>
+                  <div className="flex items-center text-sm text-gray-900">
+                    {getExperienceYears(candidate.workExperiences)}
+                  </div>
 
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  <span className="text-sm font-medium">4.8</span>
-                </div>
+                  <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                    <span className="text-sm font-medium">4.8</span>
+                  </div>
 
-                <div className="flex items-center">
-                  <Badge className={getStatusColor(candidate.status)}>
-                    {getStatusDisplay(candidate.status)}
-                  </Badge>
-                </div>
+                  {/* Status Column */}
+                  <div className="flex items-center gap-2">
+                    <Badge className={getStatusColor(candidate.status)}>
+                      {getStatusDisplay(candidate.status)}
+                    </Badge>
+                    {statusBadge && (
+                      <Badge className={statusBadge.color}>
+                        {statusBadge.text}
+                      </Badge>
+                    )}
+                  </div>
 
-                <div className="flex items-center justify-end gap-2">
-                  {getNextActions(candidate.status).map((action) => (
+                  {/* NEW: Work Status Column */}
+                  <div className="flex items-center">
+                    {workStatusBadge ? (
+                      <Badge className={workStatusBadge.color}>
+                        {workStatusBadge.text}
+                      </Badge>
+                    ) : (
+                      <span className="text-sm text-gray-500">-</span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2">
+                    {getNextActions(candidate.status).map((action) => (
+                      <Button
+                        key={action}
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (action === "revoke") {
+                            onCandidateAction("revoke", candidate);
+                          } else if (action === "rejected") {
+                            onCandidateAction("reject", candidate);
+                          } else if (action === "suspended") {
+                            onCandidateAction("suspend", candidate);
+                          } else {
+                            onCandidateAction("advance", candidate);
+                          }
+                        }}
+                        className={
+                          action === "rejected" || action === "suspended"
+                            ? "text-red-600 border-red-200"
+                            : action === "revoke"
+                              ? "text-green-600 border-green-200"
+                              : ""
+                        }
+                      >
+                        {action === "rejected"
+                          ? "Reject"
+                          : action === "suspended"
+                            ? "Suspend"
+                            : action === "revoke"
+                              ? "Revoke"
+                              : "Advance"}
+                      </Button>
+                    ))}
                     <Button
-                      key={action}
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onCandidateAction(
-                          action === "rejected" ? "reject" : "advance",
-                          candidate
-                        );
-                      }}
-                      className={
-                        action === "rejected"
-                          ? "text-red-600 border-red-200"
-                          : ""
-                      }
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      {action === "rejected" ? "Reject" : "Advance"}
+                      <MoreHorizontal className="w-4 h-4" />
                     </Button>
-                  ))}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <MoreHorizontal className="w-4 h-4" />
-                  </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Pagination */}
