@@ -9,7 +9,13 @@ import { Users, Plus, Target, MapPin, TrendingUp } from "lucide-react"
 import DashboardLayout from "@/components/Hrcomponent/dashboard-layout"
 import HireSalesEmployeeForm from "@/components/HrComponent/HireSalesEmployeeForm"
 import { useRouter } from "next/navigation"
-
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 

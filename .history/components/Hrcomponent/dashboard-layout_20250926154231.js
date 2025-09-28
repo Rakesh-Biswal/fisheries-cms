@@ -43,7 +43,7 @@ const menuItems = [
       { name: "Payroll", href: "/dashboard/hr/payroll", icon: CreditCard },
       { name: "Attendance", href: "/dashboard/hr/attendance", icon: UserCheck },
       { name: "Recruitment", href: "/dashboard/hr/recruitment", icon: UserPlus },
-{ name: "Attendance (Holidays)", href: "/dashboard/hr/holidays-management", icon: UserCheck },
+      { name: "Attendance (Holidays)", href: "/dashboard/hr/holidays-management", icon: UserCheck },
 
     ],
   },
