@@ -40,7 +40,7 @@ export default function TeamLeaderProfilePage() {
   const fetchTeamLeaderProfile = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`${API_URL}/api/hr/team-leaders/profile/${id}`, {
+      const response = await fetch(`${API_URL}/api/hr/team-leaders/team-leader/profile/${id}`, {
         method: "GET",
         credentials: "include",
       })
