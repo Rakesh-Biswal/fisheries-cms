@@ -10,7 +10,6 @@ import DashboardLayout from "@/components/Hrcomponent/dashboard-layout"
 import HireSalesEmployeeForm from "@/components/HrComponent/HireSalesEmployeeForm"
 import { useRouter } from "next/navigation"
 
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
 export default function SalesEmployeesPage() {

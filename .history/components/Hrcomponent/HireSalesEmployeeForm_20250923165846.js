@@ -110,7 +110,7 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
 
         toast({
           title: "Image selected successfully",
-          description: "Base64 string generated — ready to send to backend.",
+          description: "Profile photo uploaded successfully.",
         })
       }
 
@@ -129,25 +129,25 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
 
     switch (step) {
       case 1:
-        if (!formData.name?.trim()) {
+        if (!formData.name.trim()) {
           errors.name = "Full name is required"
           isValid = false
         }
-        if (!formData.phone?.trim()) {
+        if (!formData.phone.trim()) {
           errors.phone = "Phone number is required"
           isValid = false
         } else if (!/^[0-9]{10}$/.test(formData.phone.replace(/\D/g, ""))) {
           errors.phone = "Please enter a valid 10-digit phone number"
           isValid = false
         }
-        if (!formData.email?.trim()) {
+        if (!formData.email.trim()) {
           errors.email = "Email is required"
           isValid = false
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
           errors.email = "Please enter a valid email address"
           isValid = false
         }
-        if (!formData.password?.trim()) {
+        if (!formData.password) {
           errors.password = "Password is required"
           isValid = false
         } else if (formData.password.length < 6) {
@@ -156,84 +156,83 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
         }
         break
       case 2:
-        if (!formData.aadhar?.trim()) {
+        if (!formData.aadhar.trim()) {
           errors.aadhar = "Aadhar number is required"
           isValid = false
         } else if (!/^[0-9]{12}$/.test(formData.aadhar.replace(/\D/g, ""))) {
           errors.aadhar = "Please enter a valid 12-digit Aadhar number"
           isValid = false
         }
-        if (!formData.pan?.trim()) {
+        if (!formData.pan.trim()) {
           errors.pan = "PAN number is required"
           isValid = false
         } else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.pan)) {
           errors.pan = "Please enter a valid PAN number"
           isValid = false
         }
-        if (!formData.address?.trim()) {
+        if (!formData.address.trim()) {
           errors.address = "Address is required"
           isValid = false
         }
         break
       case 3:
-        if (!formData.accountNumber?.trim()) {
+        if (!formData.accountNumber.trim()) {
           errors.accountNumber = "Account number is required"
           isValid = false
         }
-        if (!formData.ifscCode?.trim()) {
+        if (!formData.ifscCode.trim()) {
           errors.ifscCode = "IFSC code is required"
           isValid = false
         }
-        if (!formData.bankName?.trim()) {
+        if (!formData.bankName.trim()) {
           errors.bankName = "Bank name is required"
           isValid = false
         }
-        if (!formData.branch?.trim()) {
+        if (!formData.branch.trim()) {
           errors.branch = "Branch name is required"
           isValid = false
         }
         break
       case 4:
-        if (!formData.employeeType?.trim()) {
+        if (!formData.employeeType) {
           errors.employeeType = "Employee type is required"
           isValid = false
         }
-        if (!formData.department?.trim()) {
-          errors.department = "Department is required"
-          isValid = false
-        }
-        if (!formData.designation?.trim()) {
+        if (!formData.designation.trim()) {
           errors.designation = "Designation is required"
           isValid = false
         }
-        if (!formData.experience?.toString().trim()) {
+        if (!formData.experience.toString().trim()) {
           errors.experience = "Experience is required"
           isValid = false
-        } else if (parseFloat(formData.experience) < 0 || parseFloat(formData.experience) > 50) {
+        } else if (parseInt(formData.experience) < 0 || parseInt(formData.experience) > 50) {
           errors.experience = "Experience must be between 0 and 50 years"
           isValid = false
         }
-        if (!formData.qualification?.trim()) {
+        if (!formData.qualification.trim()) {
           errors.qualification = "Qualification is required"
           isValid = false
         }
-        if (!formData.joiningDate?.trim()) {
+        if (!formData.joiningDate.trim()) {
           errors.joiningDate = "Joining date is required"
           isValid = false
         }
-        if (!formData.salary?.toString().trim()) {
+        if (!formData.salary.toString().trim()) {
           errors.salary = "Salary is required"
           isValid = false
         } else if (parseFloat(formData.salary) <= 0) {
           errors.salary = "Salary must be a positive number"
           isValid = false
         }
-        if (!formData.assignedZone?.trim()) {
+        if (!formData.assignedZone.trim()) {
           errors.assignedZone = "Assigned zone is required"
           isValid = false
         }
-        if (!formData.monthlyTarget?.toString().trim()) {
+        if (!formData.monthlyTarget.toString().trim()) {
           errors.monthlyTarget = "Monthly target is required"
+          isValid = false
+        } else if (parseFloat(formData.monthlyTarget) <= 0) {
+          errors.monthlyTarget = "Monthly target must be a positive number"
           isValid = false
         }
         break
@@ -267,26 +266,29 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
 
     setLoading(true)
     try {
-      // Prepare the data for submission
+      // Prepare the data for submission with proper data types
       const submissionData = {
-        // Basic Info
+        // Basic info
         name: formData.name.trim(),
         phone: formData.phone.replace(/\D/g, ""),
         email: formData.email.trim(),
         password: formData.password,
         
-        // Documents & Personal Details
+        // Personal details
         aadhar: formData.aadhar.replace(/\D/g, ""),
         pan: formData.pan.trim().toUpperCase(),
-        photo: formData.photo,
         address: formData.address.trim(),
-        emergencyContact: {
-          name: formData.emergencyContactName?.trim() || "",
-          phone: formData.emergencyContactPhone?.replace(/\D/g, "") || "",
-          relation: formData.emergencyContactRelation?.trim() || "",
-        },
         
-        // Banking Details
+        // Emergency contact (only include if provided)
+        ...(formData.emergencyContactName.trim() && {
+          emergencyContact: {
+            name: formData.emergencyContactName.trim(),
+            phone: formData.emergencyContactPhone.replace(/\D/g, ""),
+            relation: formData.emergencyContactRelation.trim(),
+          }
+        }),
+        
+        // Banking details
         bankAccount: {
           accountNumber: formData.accountNumber.trim(),
           ifscCode: formData.ifscCode.trim().toUpperCase(),
@@ -294,20 +296,26 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
           branch: formData.branch.trim(),
         },
         
-        // Employment Details
+        // Employment details
         employeeType: formData.employeeType,
-        department: formData.department,
+        department: formData.department.trim(),
         joiningDate: formData.joiningDate,
         salary: parseFloat(formData.salary),
         designation: formData.designation,
-        experience: parseFloat(formData.experience),
+        experience: parseInt(formData.experience) || 0,
         qualification: formData.qualification,
-        previousCompany: formData.previousCompany?.trim() || "",
+        previousCompany: formData.previousCompany.trim(),
         assignedZone: formData.assignedZone,
         monthlyTarget: parseFloat(formData.monthlyTarget),
       }
 
-      console.log("Submitting data:", submissionData)
+      // Include photo only if it exists
+      if (formData.photo) {
+        submissionData.photo = formData.photo
+      }
+
+      console.log("Submitting data to backend:", submissionData)
+      console.log("API Endpoint:", `${API_URL}/api/hr/sales-employees/hire`)
 
       const response = await fetch(`${API_URL}/api/hr/sales-employees/hire`, {
         method: "POST",
@@ -318,35 +326,35 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
         body: JSON.stringify(submissionData),
       })
 
-      const responseData = await response.json()
+      console.log("Response status:", response.status)
 
-      if (response.ok) {
-        setModalMessage(`${formData.name} has been successfully added as a Sales Employee!`)
-        setShowSuccessModal(true)
-        
-        toast({
-          title: "Success!",
-          description: "Sales employee hired successfully",
-        })
-        
-        setTimeout(() => {
-          setShowSuccessModal(false)
-          if (onSuccess) onSuccess(responseData)
-          if (onClose) onClose()
-        }, 2000)
-      } else {
-        throw new Error(responseData.message || `Failed to hire Sales Employee. Status: ${response.status}`)
+      if (!response.ok) {
+        let errorMessage = "Failed to hire Sales Employee"
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.message || errorData.error || errorMessage
+        } catch (e) {
+          errorMessage = `HTTP error! status: ${response.status}`
+        }
+        throw new Error(errorMessage)
       }
+
+      const result = await response.json()
+      console.log("Success response:", result)
+
+      setModalMessage(`${formData.name} has been successfully added as a Sales Employee!`)
+      setShowSuccessModal(true)
+      
+      setTimeout(() => {
+        setShowSuccessModal(false)
+        onSuccess(result)
+        onClose()
+      }, 2000)
+
     } catch (error) {
-      console.error("Submission error:", error)
+      console.error("Error in handleSubmit:", error)
       setModalMessage(error.message || "Failed to hire Sales Employee. Please check your connection and try again.")
       setShowErrorModal(true)
-      
-      toast({
-        title: "Error",
-        description: error.message || "Failed to submit form",
-        variant: "destructive"
-      })
     } finally {
       setLoading(false)
     }
@@ -749,12 +757,6 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
                       <option value="contract">Contract</option>
                       <option value="intern">Intern</option>
                     </select>
-                    {formErrors.employeeType && (
-                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        {formErrors.employeeType}
-                      </p>
-                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="department" className="text-sm font-medium text-gray-700">
@@ -766,14 +768,8 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
                       onChange={(e) => handleInputChange("department", e.target.value)}
                       placeholder="Sales"
                       className="h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                      aria-invalid={!!formErrors.department}
+                      readOnly
                     />
-                    {formErrors.department && (
-                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        {formErrors.department}
-                      </p>
-                    )}
                   </div>
                 </div>
 
@@ -787,7 +783,6 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
                       value={formData.designation}
                       onChange={(e) => handleInputChange("designation", e.target.value)}
                       className="h-12 w-full border border-gray-300 rounded-md px-3 focus:border-purple-500 focus:ring-purple-500"
-                      aria-invalid={!!formErrors.designation}
                     >
                       <option value="Sales Executive">Sales Executive</option>
                       <option value="Sales Associate">Sales Associate</option>
@@ -795,12 +790,6 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
                       <option value="Sales Representative">Sales Representative</option>
                       <option value="Business Development Executive">Business Development Executive</option>
                     </select>
-                    {formErrors.designation && (
-                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        {formErrors.designation}
-                      </p>
-                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="experience" className="text-sm font-medium text-gray-700">
@@ -836,7 +825,6 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
                       value={formData.qualification}
                       onChange={(e) => handleInputChange("qualification", e.target.value)}
                       className="h-12 w-full border border-gray-300 rounded-md px-3 focus:border-purple-500 focus:ring-purple-500"
-                      aria-invalid={!!formErrors.qualification}
                     >
                       <option value="">Select Qualification</option>
                       <option value="10th">10th Pass</option>
@@ -928,7 +916,7 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
                       <option value="East Zone">East Zone</option>
                       <option value="West Zone">West Zone</option>
                       <option value="Central Zone">Central Zone</option>
-                     
+                      <option value="Metro Zone">Metro Zone</option>
                     </select>
                     {formErrors.assignedZone && (
                       <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
@@ -945,6 +933,7 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
                       id="monthlyTarget"
                       type="number"
                       value={formData.monthlyTarget}
+                      onChange={(e) => handle
                       onChange={(e) => handleInputChange("monthlyTarget", e.target.value)}
                       placeholder="50000"
                       className="h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
