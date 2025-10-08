@@ -124,3 +124,17 @@
     @apply bg-background text-foreground;
   }
 }
+
+
+/* Add this to your globals.css or a relevant CSS file */
+@layer components {
+  /* Ensure dropdowns appear above other content */
+  [data-radix-popper-content-wrapper] {
+    z-index: 100 !important;
+  }
+  
+  /* Prevent body scroll when dropdown is open */
+  body[data-scroll-locked] {
+    overflow: hidden !important;
+  }
+}

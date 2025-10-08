@@ -25,38 +25,43 @@ import { Button } from "@/components/ui/button";
 const sidebarItems = [
   {
     name: "Dashboard",
-    href: "/dashboard/projectmanager",
+    href: "/dashboard/teamleader",
+    icon: LayoutDashboard,
+  },
+  {
+    name: "Tasks & Meetings",
+    href: "/dashboard/teamleader/tasks-meetings",
     icon: LayoutDashboard,
   },
   {
     name: "Puspreterie",
-    href: "/dashboard/projectmanager/puspreterie",
+    href: "/dashboard/teamleader/puspreterie",
     icon: Wheat,
   },
-  { name: "Teams", href: "/dashboard/projectmanager/teams", icon: Users },
+  { name: "Teams", href: "/dashboard/teamleader/teams", icon: Users },
   {
     name: "Farms & Fields",
-    href: "/dashboard/projectmanager/farms-fields",
+    href: "/dashboard/teamleader/farms-fields",
     icon: MapPin,
   },
   {
     name: "Clients",
-    href: "/dashboard/projectmanager/clients",
+    href: "/dashboard/teamleader/clients",
     icon: UserCheck,
   },
   {
     name: "Maintenance",
-    href: "/dashboard/projectmanager/maintenance",
+    href: "/dashboard/teamleader/maintenance",
     icon: Wrench,
   },
   {
     name: "Equipment",
-    href: "/dashboard/projectmanager/equipment",
+    href: "/dashboard/teamleader/equipment",
     icon: Package,
   },
   {
     name: "Suppliers",
-    href: "/dashboard/projectmanager/suppliers",
+    href: "/dashboard/teamleader/suppliers",
     icon: Truck,
   },
 ];
@@ -64,15 +69,15 @@ const sidebarItems = [
 const bottomItems = [
   {
     name: "Setting",
-    href: "/dashboard/projectmanager/settings",
+    href: "/dashboard/teamleader/settings",
     icon: Settings,
   },
   {
     name: "Help & Support",
-    href: "/dashboard/projectmanager/help",
+    href: "/dashboard/teamleader/help",
     icon: HelpCircle,
   },
-  { name: "Logout", href: "/dashboard/projectmanager/logout", icon: LogOut },
+  { name: "Logout", href: "/dashboard/teamleader/logout", icon: LogOut },
 ];
 
 export default function Sidebar({ onClose }) {

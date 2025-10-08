@@ -14,6 +14,7 @@ import {
   HelpCircle,
   LayoutDashboard,
   Clock,
+  Calendar,
   Database,
   Users,
   CreditCard,
@@ -32,6 +33,7 @@ const menuItems = [
     title: "MAIN MENU",
     items: [
       { name: "Dashboard", href: "/dashboard/hr", icon: LayoutDashboard },
+      { name: "Tasks & Meetings", href: "/dashboard/hr/tasks-meetings", icon: Calendar },
       { name: "Timesheet", href: "/dashboard/hr/timesheet", icon: Clock },
       { name: "Data Management", href: "/dashboard/hr/data-management", icon: Database },
     ],
