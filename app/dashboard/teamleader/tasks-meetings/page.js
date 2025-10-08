@@ -167,7 +167,7 @@ export default function TLTM() {
                                         </div>
                                     ) : (
                                         assignedTasks.slice(0, 3).map((task) => (
-                                            <div key={task._id} className="border rounded-lg p-3 space-y-2" onClick={() => router.push(`/dashboard/teamleader/tasks-meetings/assigned-hr-task-detail/${task._id}`)}>
+                                            <div key={task._id} className="border rounded-lg p-3 space-y-2">
                                                 {/* Header with badges and button */}
                                                 <div className="flex items-start justify-between gap-2">
                                                     <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0">
@@ -202,7 +202,7 @@ export default function TLTM() {
                                                 </div>
 
                                                 {/* Task Title and Description */}
-                                                <div className="space-y-1">
+                                                <div className="space-y-1"  onClick={() => router.push(`/dashboard/teamleader/tasks-meetings/assigned-hr-task-detail/${task._id}`)}>
                                                     <h4 className="font-semibold text-sm leading-tight line-clamp-2" title={task.title}>
                                                         {task.title}
                                                     </h4>
