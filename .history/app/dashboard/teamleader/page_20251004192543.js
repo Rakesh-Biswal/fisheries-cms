@@ -1,4 +1,3 @@
-// Your updated dashboard page
 "use client";
 
 import { useState } from "react";
@@ -10,8 +9,7 @@ import CropStatusChart from "@/components/TL_Component/crop-status-chart";
 import ProductionCostsChart from "@/components/TL_Component/production-costs-chart";
 import CropCycleTasks from "@/components/TL_Component/crop-cycle-tasks";
 import FarmLocations from "@/components/TL_Component/farm-locations";
-import DataManagementPanel from "@/components/TL_Component/data-management-panel";
-import MeetingSection from "@/components/TL_Component/meeting-section"; // Import the new component
+impoimport MeetingSection from "@/components/TL_Component/meeting-section"; // Import the new componentrt DataManagementPanel from "@/components/TL_Component/data-management-panel";
 
 export default function HomePage() {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -25,35 +23,28 @@ export default function HomePage() {
       <div className="space-y-6" key={refreshKey}>
         <DashboardStats />
 
-        {/* Add Meeting Section in the grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-1">
-            <MeetingSection />
-          </div>
-          <div className="xl:col-span-2">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div>
             <MonthlyYieldChart />
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <div>
             <FieldHealthChart />
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <div>
             <ProductionCostsChart />
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <div>
             <CropStatusChart />
           </div>
-          <div>
-            <CropCycleTasks />
-          </div>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div>
+            <CropCycleTasks />
+          </div>
           <div>
             <FarmLocations />
           </div>

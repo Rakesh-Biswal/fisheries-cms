@@ -60,8 +60,8 @@ const sidebarItems = [
     icon: Truck,
   },
     {
-    name: "Metting section",
-    href: "/dashboard/teamleader/metting",
+    name: "Meeting ",
+    href: "/dashboard/projectmanager/suppliers",
     icon: Truck,
   },
 ];
