@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { MoreHorizontal, FilterIcon, FileText, Link2, Eye, Edit, Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
@@ -38,8 +39,10 @@ export default function ForwardedTasksTable({
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
   }
 
+  const router = useRouter()
+
   const handleViewTask = (task) => {
-    alert("Task details view is under construction for now.")
+    alert("page is under construction");
   }
 
   const handleEditTask = (task) => {

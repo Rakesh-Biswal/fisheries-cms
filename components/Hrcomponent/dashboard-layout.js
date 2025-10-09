@@ -90,9 +90,9 @@ export default function DashboardLayout({ children }) {
         <div className="flex items-center justify-between h-16 px-6 border-b">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">N</span>
+              <span className="text-white font-bold text-sm">HR</span>
             </div>
-            <span className="text-xl font-semibold text-gray-900">Neutrack</span>
+            <span className="text-xl font-semibold text-gray-900">HR Dashboard</span>
           </div>
           <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(false)}>
             <X className="h-4 w-4" />

@@ -13,6 +13,7 @@ import AssignedTasks from "@/components/HrComponent/tasks-meetings/AssignedTasks
 import ForwardedTasksTable from "@/components/HrComponent/tasks-meetings/ForwardedTasksTable"
 import ForwardTaskModal from "@/components/HrComponent/tasks-meetings/ForwardTaskModal"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
@@ -43,24 +44,45 @@ export default function HRTM() {
   const [assignedTasks, setAssignedTasks] = useState([])
   const [forwardedTasks, setForwardedTasks] = useState([])
   const [stats, setStats] = useState({})
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState({
+    assigned: true,
+    forwarded: true,
+    stats: true
+  });
   const [forwardModalOpen, setForwardModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
   const [editingTask, setEditingTask] = useState(null)
+  const router = useRouter()
+
+  const isLoading = loading.assigned || loading.forwarded || loading.stats;
+
 
   useEffect(() => {
-    fetchAssignedTasks()
-    fetchForwardedTasks()
-    fetchStats()
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        await Promise.all([
+          fetchAssignedTasks(),
+          fetchForwardedTasks(),
+          fetchStats()
+        ])
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
   }, [])
 
   const fetchAssignedTasks = async () => {
     try {
+      setLoading(prev => ({ ...prev, assigned: true }));
       const response = await fetch(`${API_URL}/api/hr/tasks-meetings/assigned-tasks`, {
         credentials: 'include'
       })
-      
+
       if (response.ok) {
         const data = await response.json()
         setAssignedTasks(data.data || [])
@@ -71,6 +93,9 @@ export default function HRTM() {
       console.error('Error fetching assigned tasks:', error)
       toast.error('Failed to load assigned tasks')
     }
+    finally {
+      setLoading(prev => ({ ...prev, assigned: false }));
+    }
   }
 
   const fetchForwardedTasks = async () => {
@@ -78,7 +103,7 @@ export default function HRTM() {
       const response = await fetch(`${API_URL}/api/hr/tasks-meetings/forwarded-tasks`, {
         credentials: 'include'
       })
-      
+
       if (response.ok) {
         const data = await response.json()
         setForwardedTasks(data.data || [])
@@ -98,7 +123,7 @@ export default function HRTM() {
       const response = await fetch(`${API_URL}/api/hr/tasks-meetings/stats`, {
         credentials: 'include'
       })
-      
+
       if (response.ok) {
         const data = await response.json()
         setStats(data.data || {})
@@ -124,7 +149,7 @@ export default function HRTM() {
   }
 
   const handleTaskUpdated = (updatedTask) => {
-    setForwardedTasks(prev => prev.map(task => 
+    setForwardedTasks(prev => prev.map(task =>
       task._id === updatedTask._id ? updatedTask : task
     ))
     fetchStats() // Refresh stats
@@ -167,8 +192,8 @@ export default function HRTM() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           {/* Assigned Tasks from CEO */}
           <div className="lg:col-span-2">
-            <AssignedTasks 
-              tasks={assignedTasks} 
+            <AssignedTasks
+              tasks={assignedTasks}
               onForwardTask={handleForwardTask}
             />
           </div>
@@ -240,7 +265,7 @@ export default function HRTM() {
                       .filter(task => task.status !== 'completed')
                       .slice(0, 3)
                       .map(task => (
-                        <div key={task._id} className="rounded-lg border border-muted p-3">
+                        <div key={task._id} className="rounded-lg border border-muted p-3" onClick={()=>router.push(`/dashboard/hr/tasks-meetings/assigned-ceo-task-detail/${task._id}`)}>
                           <div className="flex items-center justify-between">
                             <h4 className="font-medium text-sm">{task.title}</h4>
                             <Badge variant="outline" className="text-xs capitalize">
@@ -269,7 +294,7 @@ export default function HRTM() {
         </div>
 
         {/* Forwarded Tasks Table */}
-        <ForwardedTasksTable 
+        <ForwardedTasksTable
           tasks={forwardedTasks}
           onEditTask={handleEditForwardedTask}
           onTaskDeleted={handleTaskDeleted}
