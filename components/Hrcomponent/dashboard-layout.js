@@ -63,8 +63,9 @@ const menuItems = [
   {
     title: "SUPPORT",
     items: [
-      { name: "Settings", href: "/dashboard/hr/settings", icon: Settings },
+      { name: "Profile & Settings", href: "/dashboard/hr/settings", icon: Settings },
       { name: "Help", href: "/dashboard/hr/help", icon: HelpCircle },
+      { name: "Logout", href: "/", icon: HelpCircle },
     ],
   },
 ]

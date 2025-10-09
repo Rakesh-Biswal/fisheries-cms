@@ -33,11 +33,6 @@ const sidebarItems = [
     href: "/dashboard/teamleader/tasks-meetings",
     icon: LayoutDashboard,
   },
-  {
-    name: "Puspreterie",
-    href: "/dashboard/teamleader/puspreterie",
-    icon: Wheat,
-  },
   { name: "Teams", href: "/dashboard/teamleader/teams", icon: Users },
   {
     name: "Farms & Fields",
@@ -55,11 +50,6 @@ const sidebarItems = [
     icon: Wrench,
   },
   {
-    name: "Equipment",
-    href: "/dashboard/teamleader/equipment",
-    icon: Package,
-  },
-  {
     name: "Suppliers",
     href: "/dashboard/teamleader/suppliers",
     icon: Truck,
@@ -68,7 +58,7 @@ const sidebarItems = [
 
 const bottomItems = [
   {
-    name: "Setting",
+    name: "Profile & Setting",
     href: "/dashboard/teamleader/settings",
     icon: Settings,
   },
