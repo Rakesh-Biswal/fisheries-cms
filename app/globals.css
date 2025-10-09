@@ -69,7 +69,7 @@
   --sidebar-foreground: oklch(0.95 0 0);
   --sidebar-primary: oklch(0.7 0.15 142);
   --sidebar-primary-foreground: oklch(0.1 0 0);
-  --sidebar-accent: oklch(0.7 0.15 120);
+  --sidebar-accent: oklch(70.123% 0.04944 115.636);
   --sidebar-accent-foreground: oklch(0.1 0 0);
   --sidebar-border: oklch(0.2 0 0);
   --sidebar-ring: oklch(0.7 0.15 142 / 0.5);
@@ -122,5 +122,19 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+
+/* Add this to your globals.css or a relevant CSS file */
+@layer components {
+  /* Ensure dropdowns appear above other content */
+  [data-radix-popper-content-wrapper] {
+    z-index: 100 !important;
+  }
+  
+  /* Prevent body scroll when dropdown is open */
+  body[data-scroll-locked] {
+    overflow: hidden !important;
   }
 }

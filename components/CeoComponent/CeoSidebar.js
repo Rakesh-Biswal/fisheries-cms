@@ -61,6 +61,15 @@ export default function CeoSidebar({ activeSection }) {
       color: "bg-orange-500",
       href: "/dashboard/ceo/telecaller",
     },
+    {
+      id: "tasksmeetings",
+      name: "Tasks & Meetings",
+      icon: Calendar,
+      employees: 2,
+      status: "active",
+      color: "bg-orange-700",
+      href: "/dashboard/ceo/tasks-meetings",
+    },
   ]
 
   return (

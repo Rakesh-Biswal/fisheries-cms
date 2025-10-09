@@ -14,6 +14,7 @@ import {
   HelpCircle,
   LayoutDashboard,
   Clock,
+  Calendar,
   Database,
   Users,
   CreditCard,
@@ -32,6 +33,7 @@ const menuItems = [
     title: "MAIN MENU",
     items: [
       { name: "Dashboard", href: "/dashboard/hr", icon: LayoutDashboard },
+      { name: "Tasks & Meetings", href: "/dashboard/hr/tasks-meetings", icon: Calendar },
       { name: "Timesheet", href: "/dashboard/hr/timesheet", icon: Clock },
       { name: "Data Management", href: "/dashboard/hr/data-management", icon: Database },
     ],
@@ -61,8 +63,9 @@ const menuItems = [
   {
     title: "SUPPORT",
     items: [
-      { name: "Settings", href: "/dashboard/hr/settings", icon: Settings },
+      { name: "Profile & Settings", href: "/dashboard/hr/settings", icon: Settings },
       { name: "Help", href: "/dashboard/hr/help", icon: HelpCircle },
+      { name: "Logout", href: "/", icon: HelpCircle },
     ],
   },
 ]
@@ -88,9 +91,9 @@ export default function DashboardLayout({ children }) {
         <div className="flex items-center justify-between h-16 px-6 border-b">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">N</span>
+              <span className="text-white font-bold text-sm">HR</span>
             </div>
-            <span className="text-xl font-semibold text-gray-900">Neutrack</span>
+            <span className="text-xl font-semibold text-gray-900">HR Dashboard</span>
           </div>
           <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(false)}>
             <X className="h-4 w-4" />

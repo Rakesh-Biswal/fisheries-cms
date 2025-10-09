@@ -82,21 +82,13 @@ export default function DepartmentView({ department }) {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Department Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className={`w-12 h-12 ${department.color} rounded-lg flex items-center justify-center`}>
-            
-          </div>
 
-          <div>
-            <h1 className="text-3xl font-bold">{department.name}</h1>
-            <p className="text-muted-foreground">
-              {department.employees} employees • {department.status}
-            </p>
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Project Management</h1>
+          <p className="text-muted-foreground">Manage your team manager's data effectively</p>
         </div>
-        <Badge variant={department.status === "active" ? "default" : "secondary"}>{department.status}</Badge>
+
       </div>
 
       {/* Department Metrics */}
