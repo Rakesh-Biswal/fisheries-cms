@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -45,17 +45,16 @@ const menuItems = [
       { name: "Payroll", href: "/dashboard/hr/payroll", icon: CreditCard },
       { name: "Attendance", href: "/dashboard/hr/attendance", icon: UserCheck },
       { name: "Recruitment", href: "/dashboard/hr/recruitment", icon: UserPlus },
-{ name: "Attendance (Holidays)", href: "/dashboard/hr/holidays-management", icon: UserCheck },
-
+      { name: "Attendance (Holidays)", href: "/dashboard/hr/holidays-management", icon: UserCheck },
     ],
   },
   {
     title: "Department",
-    collapsible: true, // ✅ mark as collapsible
+    collapsible: true,
     items: [
       { name: "Team Leader", href: "/dashboard/hr/team-leader", icon: Settings },
-      { name: "Accoutant", href: "/dashboard/hr/accountant", icon: Shield },
-      { name: "Project Manger", href: "/dashboard/hr/project-manager", icon: Shield },
+      { name: "Accountant", href: "/dashboard/hr/accountant", icon: Shield },
+      { name: "Project Manager", href: "/dashboard/hr/project-manager", icon: Shield },
       { name: "Sales Employee", href: "/dashboard/hr/salesemployee", icon: HelpCircle },
       { name: "Telecaller", href: "/dashboard/hr/telecaller", icon: HelpCircle },
     ],
@@ -72,19 +71,34 @@ const menuItems = [
 
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [departmentOpen, setDepartmentOpen] = useState(false) // ✅ State to toggle departments
+  const [departmentOpen, setDepartmentOpen] = useState(false)
+  const [employeeData, setEmployeeData] = useState(null)
   const pathname = usePathname()
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+
+  // ✅ Load employee data from localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("EmployeeData")
+      if (stored) {
+        setEmployeeData(JSON.parse(stored))
+      }
+    }
+  }, [])
 
   return (
     <div className="flex bg-gray-50">
       {sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
       <div
         className={cn(
           "fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Sidebar Header */}
@@ -104,7 +118,7 @@ export default function DashboardLayout({ children }) {
         <nav className="flex-1 px-4 py-6 space-y-8 overflow-y-auto">
           {menuItems.map((section) => (
             <div key={section.title}>
-              {/* Section Title (Clickable for Department) */}
+              {/* Section Title */}
               <div
                 className={cn(
                   "flex items-center justify-between px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3",
@@ -121,27 +135,69 @@ export default function DashboardLayout({ children }) {
                   ))}
               </div>
 
-              {/* Render items (hidden if Department is collapsed) */}
+              {/* Render items */}
               <div className={cn("space-y-1", section.collapsible && !departmentOpen && "hidden")}>
                 {section.items.map((item) => {
-                  const Icon = item.icon
-                  const isActive = pathname === item.href
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href;
+
+                  // ✅ Check if this is the Logout item
+                  const isLogout = item.name === "Logout";
+
                   return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={cn(
-                        "flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors",
-                        isActive
-                          ? "bg-blue-50 text-blue-700 border-r-2 border-blue-700"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                    <div key={item.name}>
+                      {isLogout ? (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const response = await fetch(`${API_URL}/api/employee/signout`, {
+                                method: "POST",
+                                credentials: "include", // important to send cookie
+                                headers: {
+                                  "Content-Type": "application/json",
+                                },
+                              });
+
+                              const result = await response.json();
+
+                              if (result.success) {
+                                // ✅ Clear local data
+                                localStorage.removeItem("EmployeeData");
+
+                                // ✅ Redirect to login page
+                                window.location.href = "/";
+                              } else {
+                                alert("Failed to log out, please try again.");
+                              }
+                            } catch (error) {
+                              console.error("Logout error:", error);
+                              alert("An error occurred while logging out.");
+                            }
+                          }}
+                          className={cn(
+                            "flex w-full items-center px-2 py-2 text-sm font-medium rounded-md transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                          )}
+                        >
+                          <Icon className="mr-3 h-4 w-4" />
+                          {item.name}
+                        </button>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          className={cn(
+                            "flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors",
+                            isActive
+                              ? "bg-blue-50 text-blue-700 border-r-2 border-blue-700"
+                              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                          )}
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          <Icon className="mr-3 h-4 w-4" />
+                          {item.name}
+                        </Link>
                       )}
-                      onClick={() => setSidebarOpen(false)}
-                    >
-                      <Icon className="mr-3 h-4 w-4" />
-                      {item.name}
-                    </Link>
-                  )
+                    </div>
+                  );
                 })}
               </div>
             </div>
@@ -180,18 +236,28 @@ export default function DashboardLayout({ children }) {
               </div>
             </div>
 
+            {/* ✅ Dynamic employee info */}
             <div className="flex items-center space-x-4">
               <Button variant="ghost" size="sm">
                 <Bell className="h-4 w-4" />
               </Button>
               <div className="flex items-center space-x-3">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="/professional-woman-diverse.png" />
-                  <AvatarFallback>MS</AvatarFallback>
+                  <AvatarImage
+                    src={employeeData?.photo || "/professional-woman-diverse.png"}
+                    alt={employeeData?.name || "Employee"}
+                  />
+                  <AvatarFallback>
+                    {employeeData?.name ? employeeData.name.charAt(0).toUpperCase() : "E"}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="hidden md:block">
-                  <p className="text-sm font-medium text-gray-900">Melanie Stone</p>
-                  <p className="text-xs text-gray-500">HR Manager</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {employeeData?.name || "Loading..."}
+                  </p>
+                  <p className="text-xs text-gray-500 capitalize">
+                    {employeeData?.role || "Employee"}
+                  </p>
                 </div>
               </div>
             </div>

@@ -1,28 +1,32 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Button } from "../ui/button"
-import { Card } from "../ui/card"
-import { Badge } from "../ui/badge"
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 import {
+  Building2,
   BarChart3,
   Users,
   Calculator,
   FolderKanban,
   Phone,
   Settings,
+  Calendar,
   ChevronDown,
   ChevronRight,
-  Building2,
-  Calendar,
   Clock,
-} from "lucide-react"
+  LogOut,
+  HelpCircle,
+  UserCheck,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
-export default function CeoSidebar({ activeSection }) {
-  const [expandedDepartments, setExpandedDepartments] = useState(true)
-  const pathname = usePathname()
+export default function CeoSidebar({ onClose }) {
+  const pathname = usePathname();
+  const [expandedDepartments, setExpandedDepartments] = useState(true);
 
   const departments = [
     {
@@ -30,8 +34,6 @@ export default function CeoSidebar({ activeSection }) {
       name: "Human Resources",
       icon: Users,
       employees: 12,
-      status: "active",
-      color: "bg-blue-500",
       href: "/dashboard/ceo/hr",
     },
     {
@@ -39,8 +41,6 @@ export default function CeoSidebar({ activeSection }) {
       name: "Accounting",
       icon: Calculator,
       employees: 8,
-      status: "active",
-      color: "bg-green-500",
       href: "/dashboard/ceo/accountant",
     },
     {
@@ -48,8 +48,6 @@ export default function CeoSidebar({ activeSection }) {
       name: "Project Management",
       icon: FolderKanban,
       employees: 15,
-      status: "busy",
-      color: "bg-purple-500",
       href: "/dashboard/ceo/projectmanager",
     },
     {
@@ -57,8 +55,6 @@ export default function CeoSidebar({ activeSection }) {
       name: "Telecaller",
       icon: Phone,
       employees: 20,
-      status: "active",
-      color: "bg-orange-500",
       href: "/dashboard/ceo/telecaller",
     },
     {
@@ -66,120 +62,168 @@ export default function CeoSidebar({ activeSection }) {
       name: "Tasks & Meetings",
       icon: Calendar,
       employees: 2,
-      status: "active",
-      color: "bg-orange-700",
       href: "/dashboard/ceo/tasks-meetings",
     },
-  ]
+  ];
+
+  const bottomItems = [
+    {
+      name: "Profile",
+      href: "/dashboard/ceo/profile",
+      icon: UserCheck,
+    },
+    {
+      name: "Help & Support",
+      href: "/dashboard/ceo/help",
+      icon: HelpCircle,
+    },
+    {
+      name: "Logout",
+      href: "/",
+      icon: LogOut,
+    },
+  ];
 
   return (
-    <div className="w-80 bg-sidebar border-r border-sidebar-border p-4 space-y-4">
-      {/* CEO Header */}
-      <Card className="p-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-            <Building2 className="w-6 h-6 text-primary-foreground" />
+    <div className="flex h-screen w-72 flex-col bg-white border-r border-gray-200">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center">
+            <Building2 className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="font-semibold text-lg">CEO Dashboard</h2>
-            <p className="text-sm text-muted-foreground">Executive Control Panel</p>
+            <h2 className="font-semibold text-lg text-gray-900">
+              CEO Dashboard
+            </h2>
+            <p className="text-xs text-gray-500">Executive Control Panel</p>
           </div>
         </div>
-      </Card>
+      </div>
 
-      {/* Navigation */}
-      <div className="space-y-2">
-        <Link href="/dashboard/ceo/overview">
-          <Button
-            variant={pathname === "/employee/ceo/overview" ? "default" : "ghost"}
-            className="w-full justify-start"
+      {/* Main Navigation */}
+      <nav className="flex-1 overflow-y-auto p-4 space-y-3">
+        {/* Overview */}
+        <Link href="/dashboard/ceo/overview" onClick={onClose}>
+          <div
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+              pathname === "/dashboard/ceo/overview"
+                ? "bg-blue-50 text-blue-700 border border-blue-200"
+                : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+            )}
           >
-            <BarChart3 className="w-4 h-4 mr-2" />
+            <BarChart3 className="w-5 h-5" />
             Company Overview
-          </Button>
+          </div>
         </Link>
 
-        {/* Departments Section */}
-        <div className="space-y-1">
-          <Button
-            variant="ghost"
-            className="w-full justify-between"
+        {/* Departments */}
+        <div>
+          <button
             onClick={() => setExpandedDepartments(!expandedDepartments)}
+            className="flex items-center justify-between w-full px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg"
           >
-            <span className="flex items-center">
-              <Users className="w-4 h-4 mr-2" />
+            <span className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
               Departments
             </span>
-            {expandedDepartments ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-          </Button>
+            {expandedDepartments ? (
+              <ChevronDown className="w-4 h-4" />
+            ) : (
+              <ChevronRight className="w-4 h-4" />
+            )}
+          </button>
 
           {expandedDepartments && (
-            <div className="ml-4 space-y-1">
-              {departments.map((dept) => (
-                <Link key={dept.id} href={dept.href}>
-                  <Button
-                    variant={pathname === dept.href ? "secondary" : "ghost"}
-                    className="w-full justify-start text-sm"
-                  >
-                    <dept.icon className="w-3 h-3 mr-2" />
-                    <span className="flex-1 text-left">{dept.name}</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {dept.employees}
-                    </Badge>
-                  </Button>
-                </Link>
-              ))}
+            <div className="ml-4 mt-2 space-y-1">
+              {departments.map((dept) => {
+                const Icon = dept.icon;
+                const isActive = pathname === dept.href;
+                return (
+                  <Link key={dept.id} href={dept.href} onClick={onClose}>
+                    <div
+                      className={cn(
+                        "flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors",
+                        isActive
+                          ? "bg-green-50 text-green-700 border border-green-200"
+                          : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4" />
+                        <span>{dept.name}</span>
+                      </div>
+                      <Badge
+                        variant="secondary"
+                        className="text-xs font-semibold"
+                      >
+                        {dept.employees}
+                      </Badge>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>
 
-        <Link href="/dashboard/ceo/settings">
-          <Button
-            variant={pathname === "/employee/ceo/settings" ? "default" : "ghost"}
-            className="w-full justify-start"
+        {/* Settings */}
+        <Link href="/dashboard/ceo/settings" onClick={onClose}>
+          <div
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+              pathname === "/dashboard/ceo/settings"
+                ? "bg-blue-50 text-blue-700 border border-blue-200"
+                : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+            )}
           >
-            <Settings className="w-4 h-4 mr-2" />
+            <Settings className="w-5 h-5" />
             Company Settings
-          </Button>
+          </div>
         </Link>
+
+        {/* Today's Schedule */}
+        <Card className="p-4 mt-4">
+          <h3 className="font-medium mb-3 flex items-center">
+            <Calendar className="w-4 h-4 mr-2 text-gray-600" />
+            Today's Schedule
+          </h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center text-gray-700">
+              <Clock className="w-3 h-3 mr-2 text-gray-400" />
+              <span>Board Meeting - 10:00 AM</span>
+            </div>
+            <div className="flex items-center text-gray-700">
+              <Clock className="w-3 h-3 mr-2 text-gray-400" />
+              <span>HR Review - 2:00 PM</span>
+            </div>
+          </div>
+        </Card>
+      </nav>
+
+      {/* Bottom Navigation */}
+      <div className="border-t border-gray-200 p-4 space-y-1">
+        {bottomItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname === item.href;
+          return (
+            <Link key={item.name} href={item.href} onClick={onClose}>
+              <div
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-blue-50 text-blue-700 border border-blue-200"
+                    : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                )}
+              >
+                <Icon className="w-5 h-5" />
+                {item.name}
+              </div>
+            </Link>
+          );
+        })}
       </div>
-
-      {/* Quick Stats */}
-      <Card className="p-4">
-        <h3 className="font-medium mb-3">Quick Stats</h3>
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Total Employees</span>
-            <span className="font-medium">55</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Active Projects</span>
-            <span className="font-medium">12</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Monthly Revenue</span>
-            <span className="font-medium text-green-600">$125K</span>
-          </div>
-        </div>
-      </Card>
-
-      {/* Today's Schedule */}
-      <Card className="p-4">
-        <h3 className="font-medium mb-3 flex items-center">
-          <Calendar className="w-4 h-4 mr-2" />
-          Today's Schedule
-        </h3>
-        <div className="space-y-2">
-          <div className="flex items-center text-sm">
-            <Clock className="w-3 h-3 mr-2 text-muted-foreground" />
-            <span>Board Meeting - 10:00 AM</span>
-          </div>
-          <div className="flex items-center text-sm">
-            <Clock className="w-3 h-3 mr-2 text-muted-foreground" />
-            <span>HR Review - 2:00 PM</span>
-          </div>
-        </div>
-      </Card>
     </div>
-  )
+  );
 }
