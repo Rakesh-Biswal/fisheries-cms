@@ -12,6 +12,7 @@ import {
   X,
   Minimize2,
   Maximize2,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter, useParams } from "next/navigation";
+import { toast } from "sonner";
 
 export default function JobDashboard() {
   const [selectedCandidate, setSelectedCandidate] = useState(null);
@@ -34,7 +36,9 @@ export default function JobDashboard() {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdvanceDialog, setShowAdvanceDialog] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [advancingStatus, setAdvancingStatus] = useState("");
+  const [rejectionReason, setRejectionReason] = useState("");
   const [updating, setUpdating] = useState(false);
   const router = useRouter();
   const params = useParams();
@@ -56,6 +60,7 @@ export default function JobDashboard() {
           setJobDetails(jobResult.data);
         } else {
           console.error("Failed to fetch job details:", jobResult.error);
+          toast.error("Failed to load job details");
         }
 
         // Fetch candidates for this job
@@ -68,9 +73,11 @@ export default function JobDashboard() {
           setCandidates(candidatesResult.data);
         } else {
           console.error("Failed to fetch candidates:", candidatesResult.error);
+          toast.error("Failed to load candidates");
         }
       } catch (error) {
         console.error("Error fetching data:", error);
+        toast.error("Error loading data");
       } finally {
         setLoading(false);
       }
@@ -119,18 +126,15 @@ export default function JobDashboard() {
     }
   };
 
-  const getNextStatus = (currentStatus) => {
-    switch (currentStatus) {
-      case "pending":
-        return "reviewed";
-      case "reviewed":
-        return "interview";
-      case "interview":
-        return "hired";
-      default:
-        return currentStatus;
-    }
-  };
+ const getNextStatus = (currentStatus) => {
+   const statusFlow = {
+     pending: "reviewed",
+     reviewed: "interview",
+     interview: "hired",
+   };
+
+   return statusFlow[currentStatus] || currentStatus;
+ };
 
   const getStatusDisplayName = (status) => {
     switch (status) {
@@ -179,17 +183,17 @@ export default function JobDashboard() {
 
       if (result.success) {
         // Update the candidate in the local state
-        setCandidates(
-          candidates.map((candidate) =>
-            candidate._id === selectedCandidate._id
-              ? {
-                  ...candidate,
-                  status: nextStatus,
-                  stageHistory: result.data.stageHistory,
-                }
-              : candidate
-          )
+        const updatedCandidates = candidates.map((candidate) =>
+          candidate._id === selectedCandidate._id
+            ? {
+                ...candidate,
+                status: nextStatus,
+                stageHistory: result.data.stageHistory,
+              }
+            : candidate
         );
+
+        setCandidates(updatedCandidates);
 
         // Update the selected candidate
         setSelectedCandidate({
@@ -199,11 +203,80 @@ export default function JobDashboard() {
         });
 
         setShowAdvanceDialog(false);
+        toast.success(
+          `Candidate advanced to ${getStatusDisplayName(nextStatus)}`
+        );
+
+        // If hired, redirect to sales employee page
+        if (nextStatus === "hired") {
+          setTimeout(() => {
+            router.push("/dashboard/hr/salesemployee");
+          }, 1500);
+        }
       } else {
         console.error("Failed to advance status:", result.error);
+        toast.error("Failed to advance candidate status");
       }
     } catch (error) {
       console.error("Error advancing status:", error);
+      toast.error("Error advancing candidate status");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleRejectCandidate = async () => {
+    if (!selectedCandidate || !rejectionReason.trim()) return;
+
+    try {
+      setUpdating(true);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/client/job-applications/${selectedCandidate._id}/reject`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            rejectionReason: rejectionReason.trim(),
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Update the candidate in the local state
+        const updatedCandidates = candidates.map((candidate) =>
+          candidate._id === selectedCandidate._id
+            ? {
+                ...candidate,
+                status: "rejected",
+                stageHistory: result.data.stageHistory,
+              }
+            : candidate
+        );
+
+        setCandidates(updatedCandidates);
+
+        // Update the selected candidate
+        setSelectedCandidate({
+          ...selectedCandidate,
+          status: "rejected",
+          stageHistory: result.data.stageHistory,
+        });
+
+        setShowRejectDialog(false);
+        setRejectionReason("");
+        toast.success("Candidate rejected successfully");
+      } else {
+        console.error("Failed to reject candidate:", result.error);
+        toast.error("Failed to reject candidate");
+      }
+    } catch (error) {
+      console.error("Error rejecting candidate:", error);
+      toast.error("Error rejecting candidate");
     } finally {
       setUpdating(false);
     }
@@ -213,8 +286,20 @@ export default function JobDashboard() {
     if (!selectedCandidate) return;
 
     const nextStatus = getNextStatus(selectedCandidate.status);
+
+    // Check if candidate can be advanced further
+    if (nextStatus === selectedCandidate.status) {
+      toast.info("Candidate has reached the final stage");
+      return;
+    }
+
     setAdvancingStatus(nextStatus);
     setShowAdvanceDialog(true);
+  };
+
+  const openRejectDialog = () => {
+    if (!selectedCandidate) return;
+    setShowRejectDialog(true);
   };
 
   const filteredCandidates =
@@ -230,7 +315,7 @@ export default function JobDashboard() {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       year: "numeric",
-      month: "long",
+      month: "short",
       day: "numeric",
     });
   };
@@ -253,6 +338,73 @@ export default function JobDashboard() {
     return `${age} Years Old`;
   };
 
+  // Calculate total experience
+  const calculateTotalExperience = (workExperiences) => {
+    if (!workExperiences || workExperiences.length === 0)
+      return "No experience";
+
+    let totalMonths = 0;
+
+    workExperiences.forEach((exp) => {
+      const startDate = new Date(exp.startDate);
+      const endDate = exp.currentJob ? new Date() : new Date(exp.endDate);
+      const months =
+        (endDate.getFullYear() - startDate.getFullYear()) * 12 +
+        (endDate.getMonth() - startDate.getMonth());
+      totalMonths += Math.max(0, months);
+    });
+
+    const years = Math.floor(totalMonths / 12);
+    const months = totalMonths % 12;
+
+    if (years === 0) return `${months} month${months !== 1 ? "s" : ""}`;
+    if (months === 0) return `${years} year${years !== 1 ? "s" : ""}`;
+    return `${years} year${years !== 1 ? "s" : ""} ${months} month${months !== 1 ? "s" : ""}`;
+  };
+
+  // Calculate expected salary based on experience and market rate
+  const calculateExpectedSalary = (workExperiences, jobDetails) => {
+    if (!workExperiences) workExperiences = [];
+
+    const baseRate = 200; // THB per hour base rate
+    const experienceBonus = workExperiences.length * 15; // 15 THB per year of experience
+    const positionMultiplier = jobDetails?.title
+      ?.toLowerCase()
+      .includes("senior")
+      ? 1.5
+      : jobDetails?.title?.toLowerCase().includes("manager")
+        ? 2
+        : 1;
+
+    const hourlyRate = Math.min(
+      (baseRate + experienceBonus) * positionMultiplier,
+      600
+    );
+    return `THB ${Math.round(hourlyRate)}/hour`;
+  };
+
+  // Calculate rating based on experience and qualifications
+  const calculateRating = (candidate) => {
+    let rating = 3.5; // Base rating
+
+    // Add points for experience
+    if (candidate.workExperiences) {
+      rating += Math.min(candidate.workExperiences.length * 0.3, 1);
+    }
+
+    // Add points for education
+    if (candidate.educations && candidate.educations.length > 0) {
+      rating += 0.5;
+    }
+
+    // Add points for skills
+    if (candidate.skills && candidate.skills.length > 3) {
+      rating += 0.5;
+    }
+
+    return Math.min(rating, 5).toFixed(1);
+  };
+
   // Get stage history for display
   const getStageHistory = (candidate) => {
     if (!candidate.stageHistory || candidate.stageHistory.length === 0) {
@@ -264,7 +416,9 @@ export default function JobDashboard() {
         },
       ];
     }
-    return candidate.stageHistory;
+    return candidate.stageHistory.sort(
+      (a, b) => new Date(a.date) - new Date(b.date)
+    );
   };
 
   if (loading) {
@@ -292,10 +446,10 @@ export default function JobDashboard() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Main Content - now full width */}
+      {/* Main Content */}
       <div className="flex-1 flex">
         {/* Job Details */}
-        <div className="w-96 bg-white border-r border-gray-200 p-6">
+        <div className="w-96 bg-white border-r border-gray-200 p-6 overflow-y-auto">
           <div className="flex items-center gap-3 mb-6">
             <Button
               variant="ghost"
@@ -422,7 +576,6 @@ export default function JobDashboard() {
                   Additional Notes
                 </div>
                 <ul className="text-sm text-gray-700 space-y-1">
-                  {/* These are hardcoded as they're not in the backend schema */}
                   <li>• Uniform provided</li>
                   <li>• Employee discounts on hotel services</li>
                 </ul>
@@ -471,16 +624,16 @@ export default function JobDashboard() {
         </div>
 
         {/* Talent List */}
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-6 overflow-y-auto">
           <div className="mb-6">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
               Talent List
             </h2>
 
-            <div className="flex items-center gap-1 mb-6">
+            <div className="flex items-center gap-1 mb-6 overflow-x-auto">
               <button
                 onClick={() => setActiveTab("all")}
-                className={`px-4 py-2 text-sm font-medium border-b-2 ${
+                className={`px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap ${
                   activeTab === "all"
                     ? "text-orange-600 border-orange-600"
                     : "text-gray-500 border-transparent hover:text-gray-700"
@@ -493,7 +646,7 @@ export default function JobDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab("pending")}
-                className={`px-4 py-2 text-sm font-medium border-b-2 ${
+                className={`px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap ${
                   activeTab === "pending"
                     ? "text-orange-600 border-orange-600"
                     : "text-gray-500 border-transparent hover:text-gray-700"
@@ -506,7 +659,7 @@ export default function JobDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab("reviewed")}
-                className={`px-4 py-2 text-sm font-medium border-b-2 ${
+                className={`px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap ${
                   activeTab === "reviewed"
                     ? "text-orange-600 border-orange-600"
                     : "text-gray-500 border-transparent hover:text-gray-700"
@@ -519,20 +672,20 @@ export default function JobDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab("interview")}
-                className={`px-4 py-2 text-sm font-medium border-b-2 ${
+                className={`px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap ${
                   activeTab === "interview"
                     ? "text-orange-600 border-orange-600"
                     : "text-gray-500 border-transparent hover:text-gray-700"
                 }`}
               >
-                Invited to Interview{" "}
+                Interview{" "}
                 <span className="ml-1 text-xs bg-gray-100 px-2 py-1 rounded">
                   {getStatusCount("interview")}
                 </span>
               </button>
               <button
                 onClick={() => setActiveTab("hired")}
-                className={`px-4 py-2 text-sm font-medium border-b-2 ${
+                className={`px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap ${
                   activeTab === "hired"
                     ? "text-orange-600 border-orange-600"
                     : "text-gray-500 border-transparent hover:text-gray-700"
@@ -543,12 +696,28 @@ export default function JobDashboard() {
                   {getStatusCount("hired")}
                 </span>
               </button>
+              <button
+                onClick={() => setActiveTab("rejected")}
+                className={`px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap ${
+                  activeTab === "rejected"
+                    ? "text-orange-600 border-orange-600"
+                    : "text-gray-500 border-transparent hover:text-gray-700"
+                }`}
+              >
+                Rejected{" "}
+                <span className="ml-1 text-xs bg-gray-100 px-2 py-1 rounded">
+                  {getStatusCount("rejected")}
+                </span>
+              </button>
             </div>
 
             <div className="flex items-center justify-between mb-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input placeholder="Search" className="pl-10 w-64" />
+                <Input
+                  placeholder="Search candidates..."
+                  className="pl-10 w-64"
+                />
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm">
@@ -575,99 +744,113 @@ export default function JobDashboard() {
               </div>
 
               <div className="divide-y divide-gray-200">
-                {filteredCandidates.map((candidate) => (
-                  <div
-                    key={candidate._id}
-                    className="grid grid-cols-6 gap-4 p-4 hover:bg-gray-50 cursor-pointer"
-                    onClick={() => setSelectedCandidate(candidate)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage
-                          src={candidate.avatar || "/placeholder.svg"}
-                        />
-                        <AvatarFallback>
-                          {candidate.firstName?.[0]}
-                          {candidate.lastName?.[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {candidate.firstName} {candidate.lastName}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {candidate.gender || "Not specified"} •{" "}
-                          {calculateAge(candidate.dateOfBirth)}
+                {filteredCandidates.length > 0 ? (
+                  filteredCandidates.map((candidate) => (
+                    <div
+                      key={candidate._id}
+                      className="grid grid-cols-6 gap-4 p-4 hover:bg-gray-50 cursor-pointer"
+                      onClick={() => setSelectedCandidate(candidate)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage
+                            src={candidate.avatar || "/placeholder-avatar.jpg"}
+                            alt={`${candidate.firstName} ${candidate.lastName}`}
+                          />
+                          <AvatarFallback className="bg-blue-100 text-blue-600">
+                            {candidate.firstName?.[0]}
+                            {candidate.lastName?.[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {candidate.firstName} {candidate.lastName}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {candidate.gender || "Not specified"} •{" "}
+                            {calculateAge(candidate.dateOfBirth)}
+                          </div>
                         </div>
                       </div>
+                      <div className="flex items-center text-sm text-gray-900">
+                        {calculateExpectedSalary(
+                          candidate.workExperiences,
+                          jobDetails
+                        )}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-900">
+                        {calculateTotalExperience(candidate.workExperiences)}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm font-medium">
+                          {calculateRating(candidate)}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <Badge className={getStatusColor(candidate.status)}>
+                          {getStatusDisplayText(candidate.status)}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCandidate(candidate);
+                          }}
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center text-sm text-gray-900">
-                      {/* Expected salary is not in the backend schema, using placeholder */}
-                      THB {Math.floor(Math.random() * 400) + 200}
-                    </div>
-                    <div className="flex items-center text-sm text-gray-900">
-                      {/* Experience calculation based on work history */}
-                      {candidate.workExperiences &&
-                      candidate.workExperiences.length > 0
-                        ? `${candidate.workExperiences.length} Years`
-                        : "No experience"}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-medium">
-                        {/* Rating not in backend, using placeholder */}
-                        {(Math.random() * 1 + 4).toFixed(1)}
-                      </span>
-                    </div>
-                    <div className="flex items-center">
-                      <Badge className={getStatusColor(candidate.status)}>
-                        {getStatusDisplayText(candidate.status)}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-end">
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </div>
+                  ))
+                ) : (
+                  <div className="p-8 text-center text-gray-500">
+                    No candidates found for this filter.
                   </div>
-                ))}
+                )}
               </div>
 
-              <div className="flex items-center justify-between p-4 border-t border-gray-200">
-                <div className="text-sm text-gray-500">
-                  Showing {filteredCandidates.length} of {candidates.length}{" "}
-                  results
+              {filteredCandidates.length > 0 && (
+                <div className="flex items-center justify-between p-4 border-t border-gray-200">
+                  <div className="text-sm text-gray-500">
+                    Showing {filteredCandidates.length} of {candidates.length}{" "}
+                    results
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm">
+                      ←
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="bg-orange-500 text-white border-orange-500"
+                    >
+                      1
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      2
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      ...
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      12
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      →
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm">
-                    ←
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="bg-orange-500 text-white border-orange-500"
-                  >
-                    1
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    2
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    ...
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    12
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    →
-                  </Button>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
+      {/* Candidate Details Dialog */}
       <Dialog
         open={!!selectedCandidate}
         onOpenChange={() => setSelectedCandidate(null)}
@@ -685,12 +868,24 @@ export default function JobDashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={openAdvanceDialog}
-                    className="justify-between p-2 h-fit w-fit text-blue-700 cursor-pointer"
-                  >
-                    Advance to Next step
-                  </button>
+                  {selectedCandidate.status !== "rejected" &&
+                    selectedCandidate.status !== "hired" && (
+                      <button
+                        onClick={openAdvanceDialog}
+                        className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                      >
+                        Advance to Next step
+                      </button>
+                    )}
+                  {selectedCandidate.status !== "rejected" &&
+                    selectedCandidate.status !== "hired" && (
+                      <button
+                        onClick={openRejectDialog}
+                        className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                      >
+                        Reject Candidate
+                      </button>
+                    )}
                 </div>
               </DialogHeader>
 
@@ -698,9 +893,12 @@ export default function JobDashboard() {
                 <div className="flex items-start gap-6">
                   <Avatar className="w-20 h-20">
                     <AvatarImage
-                      src={selectedCandidate.avatar || "/placeholder.svg"}
+                      src={
+                        selectedCandidate.avatar || "/placeholder-avatar.jpg"
+                      }
+                      alt={`${selectedCandidate.firstName} ${selectedCandidate.lastName}`}
                     />
-                    <AvatarFallback className="text-xl">
+                    <AvatarFallback className="text-xl bg-blue-100 text-blue-600">
                       {selectedCandidate.firstName?.[0]}
                       {selectedCandidate.lastName?.[0]}
                     </AvatarFallback>
@@ -712,7 +910,6 @@ export default function JobDashboard() {
                         {selectedCandidate.firstName}{" "}
                         {selectedCandidate.lastName}
                       </h3>
-                      {/* TOP TALENT badge logic - using placeholder condition */}
                       {selectedCandidate.workExperiences &&
                         selectedCandidate.workExperiences.length > 3 && (
                           <Badge className="bg-green-100 text-green-800 font-medium">
@@ -722,7 +919,8 @@ export default function JobDashboard() {
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
                       <span>
-                        ♂ {selectedCandidate.gender || "Not specified"}
+                        {selectedCandidate.gender === "male" ? "♂" : "♀"}{" "}
+                        {selectedCandidate.gender || "Not specified"}
                       </span>
                       <span>
                         👤 {calculateAge(selectedCandidate.dateOfBirth)}
@@ -732,8 +930,12 @@ export default function JobDashboard() {
                     <div className="grid grid-cols-4 gap-8 text-center">
                       <div>
                         <div className="text-2xl font-bold text-gray-900 mb-1">
-                          {/* Expected salary placeholder */}
-                          THB {Math.floor(Math.random() * 400) + 200}/hour
+                          {
+                            calculateExpectedSalary(
+                              selectedCandidate.workExperiences,
+                              jobDetails
+                            ).split(" ")[1]
+                          }
                         </div>
                         <div className="text-xs text-gray-500 mb-1">
                           Expected Salary
@@ -741,14 +943,20 @@ export default function JobDashboard() {
                       </div>
                       <div>
                         <div className="text-2xl font-bold text-gray-900 mb-1">
-                          {/* Rating placeholder */}
-                          {(Math.random() * 1 + 4).toFixed(1)}
+                          {calculateRating(selectedCandidate)}
                         </div>
                         <div className="flex justify-center mb-1">
                           {[...Array(5)].map((_, i) => (
                             <Star
                               key={i}
-                              className={`w-3 h-3 ${i < Math.floor(Math.random() * 1 + 4) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                              className={`w-3 h-3 ${
+                                i <
+                                Math.floor(
+                                  parseFloat(calculateRating(selectedCandidate))
+                                )
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-gray-300"
+                              }`}
                             />
                           ))}
                         </div>
@@ -769,21 +977,25 @@ export default function JobDashboard() {
                       </div>
                       <div>
                         <div className="text-2xl font-bold text-gray-900 mb-1">
-                          {/* Gigs done placeholder */}
-                          {Math.floor(Math.random() * 200) + 50}
+                          {selectedCandidate.workExperiences
+                            ? selectedCandidate.workExperiences.filter(
+                                (exp) => exp.currentJob
+                              ).length
+                            : 0}
                         </div>
                         <div className="text-xs text-gray-500 mb-1">
-                          Gigs Done
+                          Current Jobs
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="text-right min-w-[200px]">
-                    <div className="text-sm font-medium text-gray-900 mb-3">
+                  {/* Scrollable Stages Section */}
+                  <div className="text-right min-w-[200px] max-h-64 overflow-y-auto">
+                    <div className="text-sm font-medium text-gray-900 mb-3 sticky top-0 bg-white pb-2">
                       Stages
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-3 pr-2">
                       {getStageHistory(selectedCandidate).map(
                         (stage, index) => (
                           <div
@@ -791,7 +1003,7 @@ export default function JobDashboard() {
                             className="flex items-center gap-3 text-sm"
                           >
                             <div
-                              className={`w-3 h-3 ${
+                              className={`w-3 h-3 flex-shrink-0 ${
                                 stage.stage === "pending"
                                   ? "bg-blue-500"
                                   : stage.stage === "reviewed"
@@ -800,16 +1012,23 @@ export default function JobDashboard() {
                                       ? "bg-orange-500"
                                       : stage.stage === "hired"
                                         ? "bg-purple-500"
-                                        : "bg-gray-300"
-                              } rounded-full flex-shrink-0`}
+                                        : stage.stage === "rejected"
+                                          ? "bg-red-500"
+                                          : "bg-gray-300"
+                              } rounded-full`}
                             ></div>
-                            <div className="text-left">
-                              <div className="font-medium capitalize">
+                            <div className="text-left flex-1 min-w-0">
+                              <div className="font-medium capitalize truncate">
                                 {getStatusDisplayName(stage.stage)}
                               </div>
-                              <div className="text-xs text-gray-500">
+                              <div className="text-xs text-gray-500 truncate">
                                 {formatDate(stage.date)}
                               </div>
+                              {stage.note && (
+                                <div className="text-xs text-gray-400 truncate">
+                                  {stage.note}
+                                </div>
+                              )}
                             </div>
                           </div>
                         )
@@ -851,11 +1070,13 @@ export default function JobDashboard() {
                   selectedCandidate.references.length > 0 ? (
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <p className="text-sm text-gray-700 mb-4 leading-relaxed">
-                        "Excellent candidate with strong skills and work ethic."
+                        "
+                        {selectedCandidate.references[0].relationship ||
+                          "Excellent candidate with strong skills and work ethic."}
+                        "
                       </p>
                       <div className="flex items-center gap-3">
                         <Avatar className="w-10 h-10">
-                          <AvatarImage src="/diverse-team-manager.png" />
                           <AvatarFallback>
                             {selectedCandidate.references[0].name
                               .split(" ")
@@ -873,8 +1094,9 @@ export default function JobDashboard() {
                           </div>
                         </div>
                         <div className="text-xs text-gray-500">
-                          {/* Reference date placeholder */}
-                          {formatDate(new Date())}
+                          {formatDate(
+                            selectedCandidate.references[0].date || new Date()
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1011,8 +1233,10 @@ export default function JobDashboard() {
                             className="bg-gray-50 p-4 rounded-lg"
                           >
                             <p className="text-sm text-gray-700 mb-3">
-                              "Excellent candidate with strong skills and work
-                              ethic."
+                              "
+                              {ref.relationship ||
+                                "Excellent candidate with strong skills and work ethic."}
+                              "
                             </p>
                             <div className="flex items-center gap-2">
                               <Avatar className="w-8 h-8">
@@ -1029,12 +1253,11 @@ export default function JobDashboard() {
                                 </div>
                                 <div className="text-xs text-gray-500">
                                   {ref.company || "Previous employer"} •{" "}
-                                  {ref.relationship}
+                                  {ref.relationship || "Reference"}
                                 </div>
                               </div>
                               <div className="ml-auto text-xs text-gray-500">
-                                {/* Reference date placeholder */}
-                                {formatDate(new Date())}
+                                {formatDate(ref.date || new Date())}
                               </div>
                             </div>
                           </div>
@@ -1057,18 +1280,26 @@ export default function JobDashboard() {
                   <Button variant="outline" className="flex-1 bg-transparent">
                     💬 Send Message
                   </Button>
-                  <Button
-                    onClick={openAdvanceDialog}
-                    className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
-                  >
-                    📅 Schedule Interview ▼
-                  </Button>
+                  {selectedCandidate.status !== "rejected" &&
+                    selectedCandidate.status !== "hired" && (
+                      <Button
+                        onClick={openAdvanceDialog}
+                        className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+                      >
+                        📅{" "}
+                        {selectedCandidate.status === "interview"
+                          ? "Hire Candidate"
+                          : "Schedule Interview"}{" "}
+                        ▼
+                      </Button>
+                    )}
                 </div>
               </div>
             </>
           )}
         </DialogContent>
       </Dialog>
+
       {/* Advance Status Confirmation Dialog */}
       <Dialog open={showAdvanceDialog} onOpenChange={setShowAdvanceDialog}>
         <DialogContent className="sm:max-w-md">
@@ -1106,8 +1337,63 @@ export default function JobDashboard() {
               type="button"
               onClick={handleAdvanceStatus}
               disabled={updating}
+              className="bg-orange-500 hover:bg-orange-600"
             >
               {updating ? "Processing..." : "Proceed"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Candidate Dialog */}
+      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reject Candidate</DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4">
+            <p className="text-gray-700 mb-4">
+              Are you sure you want to reject{" "}
+              <span className="font-semibold">
+                {selectedCandidate?.firstName} {selectedCandidate?.lastName}
+              </span>
+              ? This action cannot be undone.
+            </p>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                Reason for rejection (optional)
+              </label>
+              <textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Enter reason for rejection..."
+                className="w-full p-2 border border-gray-300 rounded-md resize-none"
+                rows="3"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="sm:justify-end">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setShowRejectDialog(false);
+                setRejectionReason("");
+              }}
+              disabled={updating}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleRejectCandidate}
+              disabled={updating || !rejectionReason.trim()}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {updating ? "Processing..." : "Reject Candidate"}
             </Button>
           </DialogFooter>
         </DialogContent>
