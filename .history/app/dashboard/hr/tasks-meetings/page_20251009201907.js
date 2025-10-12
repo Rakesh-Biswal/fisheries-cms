@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 import DashboardLayout from "@/components/Hrcomponent/dashboard-layout"
-import { Calendar, Plus, MoreHorizontal } from "lucide-react"
+import { MoreHorizontal, Video, Calendar, Plus } from "lucide-react"
 import HrTaskStatsCards from "@/components/HrComponent/tasks-meetings/HrTaskStatsCards"
 import AssignedTasks from "@/components/HrComponent/tasks-meetings/AssignedTasks"
 import ForwardedTasksTable from "@/components/HrComponent/tasks-meetings/ForwardedTasksTable"
@@ -16,7 +18,7 @@ import { useRouter } from "next/navigation"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
-export default function HRTasksMeetings() {
+export default function HRTM() {
   const [assignedTasks, setAssignedTasks] = useState([])
   const [forwardedTasks, setForwardedTasks] = useState([])
   const [stats, setStats] = useState({})
@@ -123,21 +125,33 @@ export default function HRTasksMeetings() {
 
   const handleTaskForwarded = (newTask) => {
     setForwardedTasks(prev => [newTask, ...prev])
-    fetchStats()
+    fetchStats() // Refresh stats
   }
 
   const handleTaskUpdated = (updatedTask) => {
     setForwardedTasks(prev => prev.map(task => 
       task._id === updatedTask._id ? updatedTask : task
     ))
-    fetchStats()
+    fetchStats() // Refresh stats
     setEditModalOpen(false)
     setEditingTask(null)
   }
 
   const handleTaskDeleted = (taskId) => {
     setForwardedTasks(prev => prev.filter(task => task._id !== taskId))
-    fetchStats()
+    fetchStats() // Refresh stats
+  }
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <main className="p-6 space-y-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          </div>
+        </main>
+      </DashboardLayout>
+    )
   }
 
   // Helper function for task status colors
@@ -165,18 +179,6 @@ export default function HRTasksMeetings() {
       text: '#374151',
       border: '#9ca3af'
     }
-  }
-
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <main className="p-6 space-y-6">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-          </div>
-        </main>
-      </DashboardLayout>
-    )
   }
 
   return (
@@ -226,7 +228,7 @@ export default function HRTasksMeetings() {
             {/* Professional Meeting Section */}
             <MeetingSection />
 
-            {/* Quick Tasks Section */}
+            {/* Quick Tasks Section (Your original tasks tab content) */}
             <Card className="border-gray-200 shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between pb-4">
                 <CardTitle className="text-lg font-semibold">Quick Tasks</CardTitle>
@@ -311,23 +313,23 @@ export default function HRTasksMeetings() {
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
                 <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-900">Pending Tasks</span>
+                  <Video className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-900">Today's Meetings</span>
                 </div>
                 <p className="text-2xl font-bold text-blue-700">
-                  {assignedTasks.filter(task => task.status !== 'completed').length}
+                  {assignedTasks.filter(task => 
+                    new Date(task.deadline).toDateString() === new Date().toDateString() && 
+                    task.status !== 'completed'
+                  ).length}
                 </p>
               </div>
               <div className="p-4 bg-green-50 rounded-lg border border-green-100">
                 <div className="flex items-center gap-2 mb-2">
                   <Calendar className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-900">Completed Today</span>
+                  <span className="text-sm font-medium text-green-900">Pending Tasks</span>
                 </div>
                 <p className="text-2xl font-bold text-green-700">
-                  {assignedTasks.filter(task => 
-                    task.status === 'completed' && 
-                    new Date(task.updatedAt).toDateString() === new Date().toDateString()
-                  ).length}
+                  {assignedTasks.filter(task => task.status !== 'completed').length}
                 </p>
               </div>
             </div>

@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 import DashboardLayout from "@/components/Hrcomponent/dashboard-layout"
-import { Calendar, Plus, MoreHorizontal } from "lucide-react"
+import { MoreHorizontal, Video, Calendar, Plus } from "lucide-react"
 import HrTaskStatsCards from "@/components/HrComponent/tasks-meetings/HrTaskStatsCards"
 import AssignedTasks from "@/components/HrComponent/tasks-meetings/AssignedTasks"
 import ForwardedTasksTable from "@/components/HrComponent/tasks-meetings/ForwardedTasksTable"
@@ -16,7 +18,7 @@ import { useRouter } from "next/navigation"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
-export default function HRTasksMeetings() {
+export default function HRTM() {
   const [assignedTasks, setAssignedTasks] = useState([])
   const [forwardedTasks, setForwardedTasks] = useState([])
   const [stats, setStats] = useState({})
@@ -123,48 +125,21 @@ export default function HRTasksMeetings() {
 
   const handleTaskForwarded = (newTask) => {
     setForwardedTasks(prev => [newTask, ...prev])
-    fetchStats()
+    fetchStats() // Refresh stats
   }
 
   const handleTaskUpdated = (updatedTask) => {
     setForwardedTasks(prev => prev.map(task => 
       task._id === updatedTask._id ? updatedTask : task
     ))
-    fetchStats()
+    fetchStats() // Refresh stats
     setEditModalOpen(false)
     setEditingTask(null)
   }
 
   const handleTaskDeleted = (taskId) => {
     setForwardedTasks(prev => prev.filter(task => task._id !== taskId))
-    fetchStats()
-  }
-
-  // Helper function for task status colors
-  const getTaskStatusColors = (status) => {
-    const colors = {
-      pending: {
-        bg: '#fef3c7',
-        text: '#92400e',
-        border: '#f59e0b'
-      },
-      'in-progress': {
-        bg: '#dbeafe',
-        text: '#1e40af',
-        border: '#3b82f6'
-      },
-      completed: {
-        bg: '#d1fae5',
-        text: '#065f46',
-        border: '#10b981'
-      }
-    }
-    
-    return colors[status] || {
-      bg: '#f3f4f6',
-      text: '#374151',
-      border: '#9ca3af'
-    }
+    fetchStats() // Refresh stats
   }
 
   if (isLoading) {
@@ -226,7 +201,7 @@ export default function HRTasksMeetings() {
             {/* Professional Meeting Section */}
             <MeetingSection />
 
-            {/* Quick Tasks Section */}
+            {/* Quick Tasks Section (Your original tasks tab content) */}
             <Card className="border-gray-200 shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between pb-4">
                 <CardTitle className="text-lg font-semibold">Quick Tasks</CardTitle>
@@ -239,48 +214,54 @@ export default function HRTasksMeetings() {
                   {assignedTasks
                     .filter(task => task.status !== 'completed')
                     .slice(0, 4)
-                    .map(task => {
-                      const statusColors = getTaskStatusColors(task.status)
-                      return (
-                        <div 
-                          key={task._id} 
-                          className="rounded-lg border border-gray-200 p-3 hover:border-blue-300 hover:shadow-sm transition-all duration-200 cursor-pointer"
-                          onClick={() => router.push(`/dashboard/hr/tasks-meetings/assigned-ceo-task-detail/${task._id}`)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-medium text-sm text-gray-900">{task.title}</h4>
-                            <Badge 
-                              variant="outline" 
-                              className="text-xs capitalize"
-                              style={{
-                                backgroundColor: statusColors.bg,
-                                color: statusColors.text,
-                                borderColor: statusColors.border
-                              }}
-                            >
-                              {task.status}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                            {task.description}
-                          </p>
-                          <div className="flex items-center justify-between mt-2 text-xs">
-                            <span className="text-gray-500">
-                              Due: {new Date(task.deadline).toLocaleDateString()}
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <div className="w-16 bg-gray-200 rounded-full h-1.5">
-                                <div 
-                                  className="bg-blue-600 h-1.5 rounded-full" 
-                                  style={{ width: `${task.progress}%` }}
-                                ></div>
-                              </div>
-                              <span className="text-gray-700 font-medium">{task.progress}%</span>
+                    .map(task => (
+                      <div 
+                        key={task._id} 
+                        className="rounded-lg border border-gray-200 p-3 hover:border-blue-300 hover:shadow-sm transition-all duration-200 cursor-pointer"
+                        onClick={() => router.push(`/dashboard/hr/tasks-meetings/assigned-ceo-task-detail/${task._id}`)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-sm text-gray-900">{task.title}</h4>
+                          <Badge 
+                            variant="outline" 
+                            className="text-xs capitalize"
+                            style={{
+                              backgroundColor: 
+                                task.status === 'pending' ? '#fef3c7' :
+                                task.status === 'in-progress' ? '#dbeafe' :
+                                task.status === 'completed' ? '#d1fae5' : '#f3f4f6',
+                              color:
+                                task.status === 'pending' ? '#92400e' :
+                                task.status === 'in-progress' : '#1e40af' :
+                                task.status === 'completed' ? '#065f46' : '#374151',
+                              borderColor:
+                                task.status === 'pending' ? '#f59e0b' :
+                                task.status === 'in-progress' : '#3b82f6' :
+                                task.status === 'completed' ? '#10b981' : '#9ca3af'
+                            }}
+                          >
+                            {task.status}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                          {task.description}
+                        </p>
+                        <div className="flex items-center justify-between mt-2 text-xs">
+                          <span className="text-gray-500">
+                            Due: {new Date(task.deadline).toLocaleDateString()}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 bg-gray-200 rounded-full h-1.5">
+                              <div 
+                                className="bg-blue-600 h-1.5 rounded-full" 
+                                style={{ width: `${task.progress}%` }}
+                              ></div>
                             </div>
+                            <span className="text-gray-700 font-medium">{task.progress}%</span>
                           </div>
                         </div>
-                      )
-                    })}
+                      </div>
+                    ))}
                   {assignedTasks.filter(task => task.status !== 'completed').length === 0 && (
                     <div className="text-center py-6 text-gray-500 border-2 border-dashed border-gray-200 rounded-lg">
                       <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -311,23 +292,23 @@ export default function HRTasksMeetings() {
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
                 <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-900">Pending Tasks</span>
+                  <Video className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-900">Today's Meetings</span>
                 </div>
                 <p className="text-2xl font-bold text-blue-700">
-                  {assignedTasks.filter(task => task.status !== 'completed').length}
+                  {assignedTasks.filter(task => 
+                    new Date(task.deadline).toDateString() === new Date().toDateString() && 
+                    task.status !== 'completed'
+                  ).length}
                 </p>
               </div>
               <div className="p-4 bg-green-50 rounded-lg border border-green-100">
                 <div className="flex items-center gap-2 mb-2">
                   <Calendar className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-900">Completed Today</span>
+                  <span className="text-sm font-medium text-green-900">Pending Tasks</span>
                 </div>
                 <p className="text-2xl font-bold text-green-700">
-                  {assignedTasks.filter(task => 
-                    task.status === 'completed' && 
-                    new Date(task.updatedAt).toDateString() === new Date().toDateString()
-                  ).length}
+                  {assignedTasks.filter(task => task.status !== 'completed').length}
                 </p>
               </div>
             </div>
