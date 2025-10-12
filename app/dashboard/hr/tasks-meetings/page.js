@@ -3,62 +3,69 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import DashboardLayout from "@/components/Hrcomponent/dashboard-layout"
-import { Calendar, Plus, MoreHorizontal } from "lucide-react"
-import HrTaskStatsCards from "@/components/HrComponent/tasks-meetings/HrTaskStatsCards"
-import AssignedTasks from "@/components/HrComponent/tasks-meetings/AssignedTasks"
-import ForwardedTasksTable from "@/components/HrComponent/tasks-meetings/ForwardedTasksTable"
-import ForwardTaskModal from "@/components/HrComponent/tasks-meetings/ForwardTaskModal"
-import MeetingSection from "@/components/HrComponent/tasks-meetings/MeetingSection"
+import { MoreHorizontal, Video, Calendar, Plus, Filter, Clock, Users, CheckCircle } from "lucide-react"
+import HrTaskStatsCards from "@/components/Hrcomponent/tasks-meetings/HrTaskStatsCards"
+import AssignedTasks from "@/components/Hrcomponent/tasks-meetings/AssignedTasks"
+import ForwardedTasksTable from "@/components/Hrcomponent/tasks-meetings/ForwardedTasksTable"
+import ForwardTaskModal from "@/components/Hrcomponent/tasks-meetings/ForwardTaskModal"
+import MeetingModal from "@/components/Hrcomponent/tasks-meetings/MeetingModal"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
-export default function HRTasksMeetings() {
+export default function HRTM() {
   const [assignedTasks, setAssignedTasks] = useState([])
   const [forwardedTasks, setForwardedTasks] = useState([])
+  const [meetings, setMeetings] = useState([])
   const [stats, setStats] = useState({})
+  const [meetingStats, setMeetingStats] = useState({})
   const [loading, setLoading] = useState({
     assigned: true,
     forwarded: true,
+    meetings: true,
     stats: true
   })
   const [forwardModalOpen, setForwardModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
+  const [meetingModalOpen, setMeetingModalOpen] = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
   const [editingTask, setEditingTask] = useState(null)
+  const [editingMeeting, setEditingMeeting] = useState(null)
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const router = useRouter()
 
-  const isLoading = loading.assigned || loading.forwarded || loading.stats
+  const isLoading = loading.assigned || loading.forwarded || loading.meetings || loading.stats
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading({
-        assigned: true,
-        forwarded: true,
-        stats: true
-      })
+      setLoading(prev => ({ ...prev, assigned: true, forwarded: true, meetings: true, stats: true }))
       try {
         await Promise.all([
           fetchAssignedTasks(),
           fetchForwardedTasks(),
-          fetchStats()
+          fetchMeetings(),
+          fetchStats(),
+          fetchMeetingStats()
         ])
       } catch (error) {
         console.error('Error fetching data:', error)
         toast.error('Failed to load dashboard data')
       } finally {
-        setLoading({
-          assigned: false,
-          forwarded: false,
-          stats: false
-        })
+        setLoading(prev => ({ ...prev, assigned: false, forwarded: false, meetings: false, stats: false }))
       }
     }
     fetchData()
   }, [])
+
+  useEffect(() => {
+    if (meetingModalOpen === false) {
+      setEditingMeeting(null)
+    }
+  }, [meetingModalOpen])
 
   const fetchAssignedTasks = async () => {
     try {
@@ -96,6 +103,27 @@ export default function HRTasksMeetings() {
     }
   }
 
+  const fetchMeetings = async (date = selectedDate) => {
+    try {
+      setLoading(prev => ({ ...prev, meetings: true }))
+      const response = await fetch(`${API_URL}/api/hr/meetings?date=${date}`, {
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setMeetings(data.data || [])
+      } else {
+        throw new Error('Failed to fetch meetings')
+      }
+    } catch (error) {
+      console.error('Error fetching meetings:', error)
+      toast.error('Failed to load meetings')
+    } finally {
+      setLoading(prev => ({ ...prev, meetings: false }))
+    }
+  }
+
   const fetchStats = async () => {
     try {
       const response = await fetch(`${API_URL}/api/hr/tasks-meetings/stats`, {
@@ -108,6 +136,21 @@ export default function HRTasksMeetings() {
       }
     } catch (error) {
       console.error('Error fetching stats:', error)
+    }
+  }
+
+  const fetchMeetingStats = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/hr/meetings/stats`, {
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setMeetingStats(data.data || {})
+      }
+    } catch (error) {
+      console.error('Error fetching meeting stats:', error)
     }
   }
 
@@ -140,31 +183,49 @@ export default function HRTasksMeetings() {
     fetchStats()
   }
 
-  // Helper function for task status colors
-  const getTaskStatusColors = (status) => {
+  const handleMeetingCreated = (newMeeting) => {
+    setMeetings(prev => [newMeeting, ...prev])
+    fetchMeetingStats()
+  }
+
+  const handleMeetingUpdated = (updatedMeeting) => {
+    setMeetings(prev => prev.map(meeting =>
+      meeting._id === updatedMeeting._id ? updatedMeeting : meeting
+    ))
+    fetchMeetingStats()
+  }
+
+  const handleEditMeeting = (meeting) => {
+    setEditingMeeting(meeting)
+    setMeetingModalOpen(true)
+  }
+
+  const handleDateChange = (date) => {
+    setSelectedDate(date)
+    fetchMeetings(date)
+  }
+
+  const getStatusColor = (status) => {
     const colors = {
-      pending: {
-        bg: '#fef3c7',
-        text: '#92400e',
-        border: '#f59e0b'
-      },
-      'in-progress': {
-        bg: '#dbeafe',
-        text: '#1e40af',
-        border: '#3b82f6'
-      },
-      completed: {
-        bg: '#d1fae5',
-        text: '#065f46',
-        border: '#10b981'
-      }
+      scheduled: "bg-blue-500",
+      ongoing: "bg-green-500",
+      completed: "bg-gray-500",
+      cancelled: "bg-red-500"
     }
-    
-    return colors[status] || {
-      bg: '#f3f4f6',
-      text: '#374151',
-      border: '#9ca3af'
+    return colors[status] || "bg-gray-500"
+  }
+
+  const getDepartmentBadge = (department) => {
+    const variants = {
+      ceo: "default",
+      hr: "secondary",
+      'team-leader': "outline",
+      'project-manager': "outline",
+      'sales-employee': "outline",
+      telecaller: "outline",
+      accountant: "outline"
     }
+    return <Badge variant={variants[department]}>{department}</Badge>
   }
 
   if (isLoading) {
@@ -185,18 +246,8 @@ export default function HRTasksMeetings() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Tasks & Meetings</h1>
-            <p className="text-gray-600 mt-1">Manage assigned tasks and schedule meetings across departments</p>
-          </div>
-          <div className="flex gap-3">
-            <Button variant="outline" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Calendar View
-            </Button>
-            <Button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4" />
-              New Meeting
-            </Button>
+            <h1 className="text-3xl font-bold">Tasks & Meetings</h1>
+            <p className="text-muted-foreground">Manage assigned tasks, meetings, and forward work to team leaders</p>
           </div>
         </div>
 
@@ -221,32 +272,156 @@ export default function HRTasksMeetings() {
             />
           </div>
 
-          {/* Right Column - Meetings & Quick Tasks */}
-          <div className="space-y-6">
-            {/* Professional Meeting Section */}
-            <MeetingSection />
+          {/* Schedule & Meetings */}
+          <Card className="border-muted">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-base">Schedule & Meetings</CardTitle>
+              <Button size="icon" variant="ghost" aria-label="More options">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="meetings" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="meetings">
+                    Meetings
+                    <Badge variant="secondary" className="ml-2">
+                      {meetings.length}
+                    </Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="tasks">
+                    My Tasks
+                    <Badge variant="secondary" className="ml-2">
+                      {assignedTasks.filter(t => t.status !== 'completed').length}
+                    </Badge>
+                  </TabsTrigger>
+                </TabsList>
 
-            {/* Quick Tasks Section */}
-            <Card className="border-gray-200 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between pb-4">
-                <CardTitle className="text-lg font-semibold">Quick Tasks</CardTitle>
-                <Button size="icon" variant="ghost" aria-label="More options">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {assignedTasks
-                    .filter(task => task.status !== 'completed')
-                    .slice(0, 4)
-                    .map(task => {
-                      const statusColors = getTaskStatusColors(task.status)
-                      return (
-                        <div 
-                          key={task._id} 
-                          className="rounded-lg border border-gray-200 p-3 hover:border-blue-300 hover:shadow-sm transition-all duration-200 cursor-pointer"
-                          onClick={() => router.push(`/dashboard/hr/tasks-meetings/assigned-ceo-task-detail/${task._id}`)}
-                        >
+                <TabsContent value="meetings" className="space-y-4 pt-4">
+                  {/* Date Filter */}
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="meeting-date"
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => handleDateChange(e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                    <Button onClick={() => setMeetingModalOpen(true)}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      New
+                    </Button>
+                  </div>
+
+                  {/* Meetings List */}
+                  {loading.meetings ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                    </div>
+                  ) : meetings.length === 0 ? (
+                    <div className="text-center py-8 space-y-3">
+                      <Calendar className="h-12 w-12 mx-auto text-muted-foreground" />
+                      <div>
+                        <p className="text-muted-foreground mb-2">No meetings scheduled</p>
+                        <Button onClick={() => setMeetingModalOpen(true)} size="sm">
+                          Create Meeting
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {meetings.map((meeting) => (
+                        <div key={meeting._id} className="rounded-lg border border-muted p-4 hover:shadow-sm transition-shadow">
+                          {/* Header Section */}
+                          <div className="flex items-start justify-between gap-3 mb-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start gap-2 mb-2">
+                                <h4 className="font-medium text-sm leading-tight line-clamp-2 flex-1">
+                                  {meeting.title}
+                                </h4>
+
+                              </div>
+
+                              <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                                {meeting.description}
+                              </p>
+                            </div>
+
+                            <div className="flex gap-1 flex-shrink-0">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 px-2 text-xs"
+                                onClick={() => handleEditMeeting(meeting)}
+                              >
+                                Edit
+                              </Button>
+                              {meeting.meetingLink && (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  className="h-8 px-2 text-xs bg-blue-600 hover:bg-blue-700"
+                                >
+                                  Join
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Details Section */}
+                          <div className="flex flex-col gap-3">
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+
+                              <div className="flex items-center gap-1.5">
+                                <Calendar className="h-3.5 w-3.5" />
+                                <span className="text-foreground font-medium">
+                                  {new Date(meeting.meetingDate).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric'
+                                  })}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3.5 w-3.5" />
+                                <span className="text-foreground font-medium">
+                                  {meeting.startTime} - {meeting.endTime}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Participants */}
+                            <div className="flex items-center gap-2">
+                              <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                              <div className="flex flex-wrap gap-1 ">
+                                {meeting.participants.map((participant, index) => (
+                                  <Badge
+                                    key={index}
+                                    variant="outline"
+                                    className="text-[10px] px-1.5 py-0 h-5"
+                                  >
+                                    {participant.department.split('-').map(word =>
+                                      word.charAt(0).toUpperCase() + word.slice(1)
+                                    ).join(' ')}
+                                  </Badge>
+                                ))}
+
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="tasks" className="pt-4">
+                  <div className="space-y-3">
+                    {assignedTasks
+                      .filter(task => task.status !== 'completed')
+                      .slice(0, 3)
+                      .map(task => (
+                        <div key={task._id} className="rounded-lg border border-muted p-3" onClick={() => router.push(`/dashboard/hr/tasks-meetings/assigned-ceo-task-detail/${task._id}`)}>
                           <div className="flex items-center justify-between">
                             <h4 className="font-medium text-sm text-gray-900">{task.title}</h4>
                             <Badge 
@@ -349,6 +524,15 @@ export default function HRTasksMeetings() {
           task={editingTask}
           onTaskForwarded={handleTaskUpdated}
           isEditMode={true}
+        />
+
+        {/* Meeting Modal */}
+        <MeetingModal
+          open={meetingModalOpen}
+          onOpenChange={setMeetingModalOpen}
+          meeting={editingMeeting}
+          onMeetingCreated={handleMeetingCreated}
+          onMeetingUpdated={handleMeetingUpdated}
         />
       </main>
     </DashboardLayout>

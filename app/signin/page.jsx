@@ -125,18 +125,23 @@ export default function EmployeeSignInPage() {
           email: formData.email,
           password: formData.password,
         }),
-        credentials: "include",
+        credentials: "include", // ensures cookie (EmployeeToken) is set
       });
 
       const data = await response.json();
 
       if (data.success) {
-        // Redirect based on role
+        // ✅ Store employee data in localStorage
+        if (data.user) {
+          localStorage.setItem("EmployeeData", JSON.stringify(data.user));
+        }
+
+        // ✅ Redirect based on role or provided redirect path
         if (data.redirectTo) {
           window.location.href = data.redirectTo;
         } else {
           // Default redirect for other employees
-          window.location.href = "/employee/dashboard";
+          window.location.href = "/";
         }
       } else {
         setErrors({ submit: data.error || "Failed to sign in" });
@@ -148,6 +153,7 @@ export default function EmployeeSignInPage() {
       setIsLoading(false);
     }
   };
+
 
   const handleSendOtp = async (e) => {
     e.preventDefault()

@@ -7,56 +7,55 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal, Video, Calendar, Forward } from "lucide-react"
-import TLTaskStatsCards from "@/components/TL_Component/TLTaskStatsCards"
-import TodaysAssignedTasks from "@/components/TL_Component/TodaysAssignedTasks"
-import AssignedTasksTable from "@/components/TL_Component/AssignedTasksTable"
-import AssignTaskModal from "@/components/TL_Component/AssignTaskModal"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { MoreHorizontal, Video, Calendar, Forward, Plus, Filter, Clock, Users } from "lucide-react"
+import TLTaskStatsCards from "@/components/TL_Component/tasks-meetings/TLTaskStatsCards"
+import TodaysAssignedTasks from "@/components/TL_Component/tasks-meetings/TodaysAssignedTasks"
+import AssignedTasksTable from "@/components/TL_Component/tasks-meetings/AssignedTasksTable"
+import AssignTaskModal from "@/components/TL_Component/tasks-meetings/AssignTaskModal"
+import MeetingModal from "@/components/TL_Component/tasks-meetings/MeetingModal"
 import { toast } from "sonner"
 import { Progress } from "@/components/ui/progress"
 import { useRouter } from "next/navigation"
 
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
-
-// Sample meetings data
-const meetings = [
-    {
-        title: "Daily Sales Sync",
-        status: "Starting Soon",
-        platform: "Zoom Meeting",
-        time: "09:00 AM — 09:30 AM",
-        members: [
-            { name: "SE1", fallback: "SE1" },
-            { name: "SE2", fallback: "SE2" },
-        ],
-    },
-    {
-        title: "Weekly Review",
-        status: "Scheduled",
-        platform: "Google Meeting",
-        time: "03:00 PM — 04:00 PM",
-        members: [
-            { name: "HR", fallback: "HR" },
-        ],
-    },
-]
 
 export default function TLTM() {
     const [assignedTasks, setAssignedTasks] = useState([])
+    const [meetings, setMeetings] = useState([])
     const [stats, setStats] = useState({})
-    const [loading, setLoading] = useState(true)
+    const [meetingStats, setMeetingStats] = useState({})
+    const [loading, setLoading] = useState({
+        assigned: true,
+        meetings: true,
+        stats: true
+    })
     const [assignModalOpen, setAssignModalOpen] = useState(false)
+    const [meetingModalOpen, setMeetingModalOpen] = useState(false)
     const [selectedTask, setSelectedTask] = useState(null)
-    const router= useRouter()
+    const [editingMeeting, setEditingMeeting] = useState(null)
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+    const router = useRouter()
+
+    const isLoading = loading.assigned || loading.meetings || loading.stats
 
     useEffect(() => {
         fetchAssignedTasks()
+        fetchMeetings()
         fetchStats()
+        fetchMeetingStats()
     }, [])
+
+    useEffect(() => {
+        if (meetingModalOpen === false) {
+            setEditingMeeting(null)
+        }
+    }, [meetingModalOpen])
 
     const fetchAssignedTasks = async () => {
         try {
+            setLoading(prev => ({ ...prev, assigned: true }))
             const response = await fetch(`${API_URL}/api/tl/tasks-meetings/assigned-tasks`, {
                 credentials: 'include'
             })
@@ -71,7 +70,28 @@ export default function TLTM() {
             console.error('Error fetching assigned tasks:', error)
             toast.error('Failed to load assigned tasks')
         } finally {
-            setLoading(false)
+            setLoading(prev => ({ ...prev, assigned: false }))
+        }
+    }
+
+    const fetchMeetings = async (date = selectedDate) => {
+        try {
+            setLoading(prev => ({ ...prev, meetings: true }))
+            const response = await fetch(`${API_URL}/api/tl/meetings?date=${date}`, {
+                credentials: 'include'
+            })
+
+            if (response.ok) {
+                const data = await response.json()
+                setMeetings(data.data || [])
+            } else {
+                throw new Error('Failed to fetch meetings')
+            }
+        } catch (error) {
+            console.error('Error fetching meetings:', error)
+            toast.error('Failed to load meetings')
+        } finally {
+            setLoading(prev => ({ ...prev, meetings: false }))
         }
     }
 
@@ -90,27 +110,75 @@ export default function TLTM() {
         }
     }
 
+    const fetchMeetingStats = async () => {
+        try {
+            const response = await fetch(`${API_URL}/api/tl/meetings/stats`, {
+                credentials: 'include'
+            })
+
+            if (response.ok) {
+                const data = await response.json()
+                setMeetingStats(data.data || {})
+            }
+        } catch (error) {
+            console.error('Error fetching meeting stats:', error)
+        }
+    }
+
     const handleAssignTask = (task) => {
         setSelectedTask(task)
         setAssignModalOpen(true)
     }
 
     const handleTaskAssigned = (newTask) => {
-        fetchStats() // Refresh stats
-        // You might want to refresh the assigned tasks list as well
+        fetchStats()
     }
 
     const handleTaskDeleted = (taskId) => {
-        fetchStats() // Refresh stats
+        fetchStats()
     }
 
-    if (loading) {
+    const handleMeetingCreated = (newMeeting) => {
+        setMeetings(prev => [newMeeting, ...prev])
+        fetchMeetingStats()
+    }
+
+    const handleMeetingUpdated = (updatedMeeting) => {
+        setMeetings(prev => prev.map(meeting =>
+            meeting._id === updatedMeeting._id ? updatedMeeting : meeting
+        ))
+        fetchMeetingStats()
+    }
+
+    const handleEditMeeting = (meeting) => {
+        setEditingMeeting(meeting)
+        setMeetingModalOpen(true)
+    }
+
+    const handleDateChange = (date) => {
+        setSelectedDate(date)
+        fetchMeetings(date)
+    }
+
+    const getStatusColor = (status) => {
+        const colors = {
+            scheduled: "bg-blue-500",
+            ongoing: "bg-green-500",
+            completed: "bg-gray-500",
+            cancelled: "bg-red-500"
+        }
+        return colors[status] || "bg-gray-500"
+    }
+
+    if (isLoading) {
         return (
-            <main className="p-6 space-y-6">
-                <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-                </div>
-            </main>
+            <DashboardLayout title="Tasks & Meetings">
+                <main className="p-4 space-y-4">
+                    <div className="flex items-center justify-center h-64">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                    </div>
+                </main>
+            </DashboardLayout>
         )
     }
 
@@ -123,42 +191,183 @@ export default function TLTM() {
                         <h1 className="text-3xl font-bold">Tasks & Meetings</h1>
                         <p className="text-muted-foreground">Manage daily task assignments and team coordination</p>
                     </div>
+                    <Button onClick={() => setMeetingModalOpen(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        New Meeting
+                    </Button>
                 </div>
 
                 {/* Stats Cards */}
                 <TLTaskStatsCards stats={stats} />
 
-                {/* Middle row: TODAY'S ASSIGNED TASKS + MY TASKS FROM HR (INTERCHANGED) */}
+                {/* Middle row: TODAY'S ASSIGNED TASKS + MY TASKS FROM HR */}
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                     {/* TODAY'S ASSIGNED TASKS (Now on the left side - larger box) */}
                     <div className="lg:col-span-2">
                         <TodaysAssignedTasks onAssignTask={handleAssignTask} />
                     </div>
 
-                    {/* MY TASKS FROM HR (Now on the right side - smaller box) */}
+                    {/* MY TASKS FROM HR & MEETINGS (Now on the right side - smaller box) */}
                     <Card className="border-muted">
                         <CardHeader className="flex flex-row items-center justify-between pb-3">
-                            <CardTitle className="text-base">My Tasks from HR</CardTitle>
+                            <CardTitle className="text-base">Schedule & Meetings</CardTitle>
                             <Button size="icon" variant="ghost" aria-label="More options" className="h-8 w-8">
                                 <MoreHorizontal className="h-4 w-4" />
                             </Button>
                         </CardHeader>
                         <CardContent className="pt-0">
-                            <Tabs defaultValue="tasks" className="w-full">
+                            <Tabs defaultValue="meetings" className="w-full">
                                 <TabsList className="grid w-full grid-cols-2 h-9">
-                                    <TabsTrigger value="tasks" className="text-xs">
-                                        Tasks
-                                        <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
-                                            {assignedTasks.length}
-                                        </Badge>
-                                    </TabsTrigger>
                                     <TabsTrigger value="meetings" className="text-xs">
                                         Meetings
                                         <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
                                             {meetings.length}
                                         </Badge>
                                     </TabsTrigger>
+                                    <TabsTrigger value="tasks" className="text-xs">
+                                        My Tasks
+                                        <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
+                                            {assignedTasks.length}
+                                        </Badge>
+                                    </TabsTrigger>
                                 </TabsList>
+
+                                <TabsContent value="meetings" className="space-y-3 pt-3">
+                                    {/* Date Filter */}
+                                    <div className="flex items-center gap-2">
+                                        <Label htmlFor="meeting-date" className="text-xs text-muted-foreground whitespace-nowrap">
+                                            Date:
+                                        </Label>
+                                        <Input
+                                            id="meeting-date"
+                                            type="date"
+                                            value={selectedDate}
+                                            onChange={(e) => handleDateChange(e.target.value)}
+                                            className="h-7 text-xs"
+                                        />
+                                        <Button variant="outline" size="sm" className="h-7 px-2">
+                                            <Filter className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+
+                                    {/* Meetings List */}
+                                    {loading.meetings ? (
+                                        <div className="flex items-center justify-center py-4">
+                                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                                        </div>
+                                    ) : meetings.length === 0 ? (
+                                        <div className="text-center py-6 space-y-2">
+                                            <Calendar className="h-8 w-8 mx-auto text-muted-foreground" />
+                                            <div>
+                                                <p className="text-muted-foreground text-xs mb-2">No meetings scheduled</p>
+                                                <Button
+                                                    onClick={() => setMeetingModalOpen(true)}
+                                                    size="sm"
+                                                    className="h-7 text-xs"
+                                                >
+                                                    Create First Meeting
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {meetings.map((meeting) => (
+                                                <div key={meeting._id} className="rounded-lg border border-muted p-3 hover:shadow-sm transition-shadow">
+                                                    {/* Header Section */}
+                                                    <div className="flex items-start justify-between gap-2 mb-2">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-start gap-2 mb-1">
+                                                                <h4 className="font-medium text-xs leading-tight line-clamp-2 flex-1">
+                                                                    {meeting.title}
+                                                                </h4>
+                                                                <Badge
+                                                                    variant="outline"
+                                                                    className={`
+                                                                        flex-shrink-0 text-[10px] px-1.5 py-0 h-5
+                                                                        ${getStatusColor(meeting.status)}
+                                                                    `}
+                                                                >
+                                                                    {meeting.status}
+                                                                </Badge>
+                                                            </div>
+
+                                                            <p className="text-[10px] text-muted-foreground line-clamp-2 mb-1">
+                                                                {meeting.description}
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="flex gap-1 flex-shrink-0">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-6 px-1.5 text-[10px]"
+                                                                onClick={() => handleEditMeeting(meeting)}
+                                                            >
+                                                                Edit
+                                                            </Button>
+                                                            {meeting.meetingLink && (
+                                                                <Button
+                                                                    variant="default"
+                                                                    size="sm"
+                                                                    className="h-6 px-1.5 text-[10px] bg-blue-600 hover:bg-blue-700"
+                                                                >
+                                                                    Join
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Details Section */}
+                                                    <div className="flex flex-col gap-3">
+                                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                                            <div className="flex items-center gap-1">
+                                                                <Video className="h-3 w-3" />
+                                                                <span className="truncate max-w-[80px]">{meeting.platform}</span>
+                                                            </div>
+
+                                                            <div className="flex items-center gap-1">
+                                                                <Calendar className="h-3 w-3" />
+                                                                <span className="text-foreground font-medium">
+                                                                    {new Date(meeting.meetingDate).toLocaleDateString('en-US', {
+                                                                        month: 'short',
+                                                                        day: 'numeric'
+                                                                    })}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Participants */}
+                                                        <div className="flex items-center gap-2">
+                                                            <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                                                            <div className="flex flex-wrap gap-1 ">
+                                                                {meeting.participants.map((participant, index) => (
+                                                                    <Badge
+                                                                        key={index}
+                                                                        variant="outline"
+                                                                        className="text-[10px] px-1.5 py-0 h-5"
+                                                                    >
+                                                                        {participant.department.split('-').map(word =>
+                                                                            word.charAt(0).toUpperCase() + word.slice(1)
+                                                                        ).join(' ')}
+                                                                    </Badge>
+                                                                ))}
+
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Time */}
+                                                    <div className="flex items-center gap-1 mt-1 text-[10px] text-muted-foreground">
+                                                        <Clock className="h-3 w-3" />
+                                                        <span className="text-foreground font-medium">
+                                                            {meeting.startTime} - {meeting.endTime}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </TabsContent>
 
                                 <TabsContent value="tasks" className="space-y-3 pt-3">
                                     {assignedTasks.length === 0 ? (
@@ -171,22 +380,21 @@ export default function TLTM() {
                                                 {/* Header with badges and button */}
                                                 <div className="flex items-start justify-between gap-2">
                                                     <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0">
-                                                        <Badge 
+                                                        <Badge
                                                             variant={
                                                                 task.priority === 'high' ? 'destructive' :
-                                                                task.priority === 'medium' ? 'secondary' : 'outline'
+                                                                    task.priority === 'medium' ? 'secondary' : 'outline'
                                                             }
                                                             className="text-xs h-5"
                                                         >
                                                             {task.priority}
                                                         </Badge>
-                                                        <Badge 
-                                                            variant="outline" 
-                                                            className={`text-xs h-5 ${
-                                                                task.status === 'pending' ? 'bg-gray-500 text-white' :
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={`text-xs h-5 ${task.status === 'pending' ? 'bg-gray-500 text-white' :
                                                                 task.status === 'in-progress' ? 'bg-blue-500 text-white' :
-                                                                task.status === 'completed' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-                                                            }`}
+                                                                    task.status === 'completed' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                                                                }`}
                                                         >
                                                             {task.status}
                                                         </Badge>
@@ -202,7 +410,7 @@ export default function TLTM() {
                                                 </div>
 
                                                 {/* Task Title and Description */}
-                                                <div className="space-y-1"  onClick={() => router.push(`/dashboard/teamleader/tasks-meetings/assigned-hr-task-detail/${task._id}`)}>
+                                                <div className="space-y-1" onClick={() => router.push(`/dashboard/teamleader/tasks-meetings/assigned-hr-task-detail/${task._id}`)}>
                                                     <h4 className="font-semibold text-sm leading-tight line-clamp-2" title={task.title}>
                                                         {task.title}
                                                     </h4>
@@ -242,50 +450,6 @@ export default function TLTM() {
                                         </div>
                                     )}
                                 </TabsContent>
-
-                                <TabsContent value="meetings" className="pt-3">
-                                    <div className="space-y-3">
-                                        {meetings.map((m) => (
-                                            <div key={m.title} className="rounded-lg border border-muted p-3">
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <div className="space-y-1 flex-1 min-w-0">
-                                                        <div className="flex items-center gap-2">
-                                                            <h4 className="font-medium text-sm truncate" title={m.title}>
-                                                                {m.title}
-                                                            </h4>
-                                                            <Badge variant="outline" className="text-xs h-5 whitespace-nowrap">
-                                                                {m.status}
-                                                            </Badge>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                            <Video className="h-3 w-3 flex-shrink-0" />
-                                                            <span className="truncate">{m.platform}</span>
-                                                        </div>
-                                                    </div>
-                                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs flex-shrink-0">
-                                                        Join
-                                                    </Button>
-                                                </div>
-                                                <div className="mt-2 flex items-center justify-between text-xs">
-                                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                                        <Calendar className="h-3 w-3 flex-shrink-0" />
-                                                        <span className="text-foreground truncate">{m.time}</span>
-                                                    </div>
-                                                    <div className="flex -space-x-1.5">
-                                                        {m.members.map((mem) => (
-                                                            <Avatar key={mem.fallback} className="h-6 w-6 ring-1 ring-background">
-                                                                <AvatarImage src="/placeholder.svg" alt={mem.name} />
-                                                                <AvatarFallback className="text-[10px]">
-                                                                    {mem.fallback}
-                                                                </AvatarFallback>
-                                                            </Avatar>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </TabsContent>
                             </Tabs>
                         </CardContent>
                     </Card>
@@ -300,6 +464,15 @@ export default function TLTM() {
                     onOpenChange={setAssignModalOpen}
                     task={selectedTask}
                     onTaskAssigned={handleTaskAssigned}
+                />
+
+                {/* Meeting Modal */}
+                <MeetingModal
+                    open={meetingModalOpen}
+                    onOpenChange={setMeetingModalOpen}
+                    meeting={editingMeeting}
+                    onMeetingCreated={handleMeetingCreated}
+                    onMeetingUpdated={handleMeetingUpdated}
                 />
             </main>
         </DashboardLayout>

@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import {
   User,
@@ -20,12 +19,14 @@ import {
   Mail,
   Smartphone,
   Key,
-  Building,
   Save,
   Camera,
+  Building,
   MapPin,
   GraduationCap,
   Briefcase,
+  CreditCard,
+  UserPlus,
   Calendar,
 } from "lucide-react"
 import ImageUploadService from "@/services/ImageUploadService"
@@ -38,12 +39,6 @@ const settingsSections = [
     title: "Profile Settings",
     icon: User,
     description: "Manage your personal information and preferences",
-  },
-  {
-    id: "business",
-    title: "Business Details",
-    icon: Building,
-    description: "Update your employment and business information",
   },
   {
     id: "notifications",
@@ -64,54 +59,16 @@ export default function HrProfilePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [profileData, setProfileData] = useState(null)
+  const [formData, setFormData] = useState({})
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  })
   const [settings, setSettings] = useState({
     emailNotifications: true,
     pushNotifications: false,
     weeklyReports: true,
-    twoFactorAuth: false,
-  })
-
-  // Form states
-  const [personalInfo, setPersonalInfo] = useState({
-    name: "",
-    phone: "",
-    companyEmail: "",
-    personalEmail: "",
-    emergencyContact: {
-      name: "",
-      phone: "",
-      relation: ""
-    },
-    address: {
-      street: "",
-      city: "",
-      state: "",
-      pincode: ""
-    },
-    qualification: {
-      degree: "",
-      institution: "",
-      year: ""
-    },
-    experience: 0
-  })
-
-  const [businessInfo, setBusinessInfo] = useState({
-    employeeType: "full-time",
-    department: "Human Resources",
-    designation: "HR Executive",
-    joiningDate: "",
-    deptStatus: "active",
-    probationPeriod: 6,
-    confirmationDate: "",
-    performanceRating: null,
-    notes: ""
-  })
-
-  const [passwordInfo, setPasswordInfo] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: ""
   })
 
   useEffect(() => {
@@ -120,7 +77,6 @@ export default function HrProfilePage() {
 
   const fetchProfileData = async () => {
     try {
-      setLoading(true)
       const response = await fetch(`${API_URL}/api/hr/profile/fetch`, {
         credentials: 'include'
       })
@@ -128,7 +84,29 @@ export default function HrProfilePage() {
       if (response.ok) {
         const data = await response.json()
         setProfileData(data.data)
-        populateFormData(data.data)
+        setFormData({
+          name: data.data.name || "",
+          phone: data.data.phone || "",
+          personalEmail: data.data.personalEmail || "",
+          address: data.data.address || {
+            street: "",
+            city: "",
+            state: "",
+            pincode: ""
+          },
+          emergencyContact: data.data.emergencyContact || {
+            name: "",
+            phone: "",
+            relation: ""
+          },
+          qualification: data.data.qualification || {
+            degree: "",
+            institution: "",
+            year: ""
+          },
+          experience: data.data.experience || 0,
+          previousCompany: data.data.previousCompany || "",
+        })
       } else {
         throw new Error('Failed to fetch profile data')
       }
@@ -140,147 +118,78 @@ export default function HrProfilePage() {
     }
   }
 
-  const populateFormData = (data) => {
-    // Personal Information
-    setPersonalInfo({
-      name: data.name || "",
-      phone: data.phone || "",
-      companyEmail: data.companyEmail || "",
-      personalEmail: data.personalEmail || "",
-      emergencyContact: data.emergencyContact || {
-        name: "",
-        phone: "",
-        relation: ""
-      },
-      address: data.address || {
-        street: "",
-        city: "",
-        state: "",
-        pincode: ""
-      },
-      qualification: data.qualification || {
-        degree: "",
-        institution: "",
-        year: ""
-      },
-      experience: data.experience || 0
-    })
-
-    // Business Information
-    if (data.businessData) {
-      setBusinessInfo({
-        employeeType: data.businessData.employeeType || "full-time",
-        department: data.businessData.department || "Human Resources",
-        designation: data.businessData.designation || "HR Executive",
-        joiningDate: data.businessData.joiningDate ?
-          new Date(data.businessData.joiningDate).toISOString().split('T')[0] : "",
-        deptStatus: data.businessData.deptStatus || "active",
-        probationPeriod: data.businessData.probationPeriod || 6,
-        confirmationDate: data.businessData.confirmationDate ?
-          new Date(data.businessData.confirmationDate).toISOString().split('T')[0] : "",
-        performanceRating: data.businessData.performanceRating || null,
-        notes: data.businessData.notes || ""
-      })
-    }
-  }
-
-  const handleSettingChange = (key, value) => {
-    setSettings((prev) => ({ ...prev, [key]: value }))
-  }
-
-  const handlePersonalInfoChange = (field, value) => {
-    if (field.includes('.')) {
-      const [parent, child] = field.split('.')
-      setPersonalInfo(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: value
+  const handleInputChange = (field, value) => {
+    setFormData(prev => {
+      if (field.includes('.')) {
+        const [parent, child] = field.split('.')
+        return {
+          ...prev,
+          [parent]: {
+            ...prev[parent],
+            [child]: value
+          }
         }
-      }))
-    } else {
-      setPersonalInfo(prev => ({ ...prev, [field]: value }))
-    }
+      }
+      return { ...prev, [field]: value }
+    })
   }
 
-  const handleBusinessInfoChange = (field, value) => {
-    setBusinessInfo(prev => ({ ...prev, [field]: value }))
-  }
-
-  const handlePasswordChange = (field, value) => {
-    setPasswordInfo(prev => ({ ...prev, [field]: value }))
-  }
-
-  const savePersonalInfo = async () => {
+  const handleSaveProfile = async () => {
+    setSaving(true)
     try {
-      setSaving(true)
-      const response = await fetch(`${API_URL}/api/hr/profile/update-personal-info`, {
+      const response = await fetch(`${API_URL}/api/hr/profile/update-profile-data`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify(personalInfo)
+        body: JSON.stringify(formData)
       })
 
       if (response.ok) {
         const data = await response.json()
         setProfileData(data.data)
-        toast.success('Personal information updated successfully')
+        toast.success('Profile updated successfully')
       } else {
         const error = await response.json()
-        throw new Error(error.message || 'Failed to update personal information')
+        throw new Error(error.message || 'Failed to update profile')
       }
     } catch (error) {
-      console.error('Error updating personal info:', error)
-      toast.error(error.message || 'Failed to update personal information')
+      console.error('Error updating profile:', error)
+      toast.error(error.message || 'Failed to update profile')
     } finally {
       setSaving(false)
     }
   }
 
-  const saveBusinessInfo = async () => {
-    try {
-      setSaving(true)
-      const response = await fetch(`${API_URL}/api/hr/profile/update-business-info`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(businessInfo)
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        toast.success('Business information updated successfully')
-      } else {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to update business information')
-      }
-    } catch (error) {
-      console.error('Error updating business info:', error)
-      toast.error(error.message || 'Failed to update business information')
-    } finally {
-      setSaving(false)
+  const handleChangePassword = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('New passwords do not match')
+      return
     }
-  }
 
-  const changePassword = async () => {
+    if (passwordData.newPassword.length < 6) {
+      toast.error('New password must be at least 6 characters long')
+      return
+    }
+
+    setSaving(true)
     try {
-      setSaving(true)
       const response = await fetch(`${API_URL}/api/hr/profile/change-password`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify(passwordInfo)
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        })
       })
 
       if (response.ok) {
         toast.success('Password changed successfully')
-        setPasswordInfo({
+        setPasswordData({
           currentPassword: "",
           newPassword: "",
           confirmPassword: ""
@@ -297,21 +206,34 @@ export default function HrProfilePage() {
     }
   }
 
-  const handlePhotoUpload = async (event) => {
+  const handlePhotoChange = async (event) => {
     const file = event.target.files[0]
     if (!file) return
+
+    // Check file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Please select an image smaller than 2MB')
+      return
+    }
+
+    // Check file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Please select a JPG, PNG, or GIF image')
+      return
+    }
 
     try {
       // Upload to Cloudinary and get the actual URL
       const cloudinaryUrl = await ImageUploadService.uploadToCloudinary(file)
 
       const response = await fetch(`${API_URL}/api/hr/profile/update-profile-photo`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ photoUrl: cloudinaryUrl }) // Send Cloudinary URL to backend
+        body: JSON.stringify({ photoUrl: cloudinaryUrl })
       })
 
       if (response.ok) {
@@ -319,76 +241,79 @@ export default function HrProfilePage() {
         setProfileData(data.data)
         toast.success('Profile photo updated successfully')
       } else {
-        throw new Error('Failed to update profile photo')
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to update photo')
       }
     } catch (error) {
-      console.error('Error updating profile photo:', error)
-      toast.error(error.message || 'Failed to update profile photo')
+      console.error('Error updating photo:', error)
+      toast.error(error.message || 'Failed to update photo')
     }
+  }
+
+  const handleSettingChange = (key, value) => {
+    setSettings((prev) => ({ ...prev, [key]: value }))
   }
 
   const renderProfileSettings = () => (
     <div className="space-y-6">
+      {/* Personal Information */}
       <Card>
         <CardHeader>
-          <CardTitle>Personal Information</CardTitle>
-          <CardDescription>Update your personal details and contact information</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Personal Information
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Profile Photo */}
-          <div className="flex items-center space-x-6">
-            <div className="relative">
-              <Avatar className="h-24 w-24 border-2 border-gray-200">
-                <AvatarImage src={profileData?.photo || "/placeholder-user.jpg"} />
-                <AvatarFallback className="text-lg">
-                  {profileData?.name?.split(' ').map(n => n[0]).join('') || 'HR'}
-                </AvatarFallback>
-              </Avatar>
-              <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
-                <div className="bg-blue-600 rounded-full p-2 hover:bg-blue-700 transition-colors">
-                  <Camera className="h-4 w-4 text-white" />
-                </div>
-              </Label>
-              <Input
-                id="photo-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handlePhotoUpload}
-              />
-            </div>
+        <CardContent className="space-y-4">
+          <div className="flex items-center space-x-4">
+            <Avatar className="h-20 w-20">
+              <AvatarImage src={profileData?.photo || "/placeholder.svg"} />
+              <AvatarFallback className="text-lg">
+                {profileData?.name?.split(' ').map(n => n[0]).join('') || 'HR'}
+              </AvatarFallback>
+            </Avatar>
             <div>
-              <p className="font-medium">Profile Photo</p>
+              <input
+                type="file"
+                id="photo-upload"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="hidden"
+              />
+              <Label htmlFor="photo-upload">
+                <Button variant="outline" size="sm" asChild>
+                  <span className="cursor-pointer">
+                    <Camera className="h-4 w-4 mr-2" />
+                    Change Photo
+                  </span>
+                </Button>
+              </Label>
               <p className="text-sm text-gray-500 mt-1">JPG, PNG or GIF. Max size 2MB.</p>
             </div>
           </div>
 
-          {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="name">Full Name *</Label>
               <Input
                 id="name"
-                value={personalInfo.name}
-                onChange={(e) => handlePersonalInfoChange('name', e.target.value)}
-                placeholder="Enter your full name"
+                value={formData.name || ""}
+                onChange={(e) => handleInputChange('name', e.target.value)}
               />
             </div>
             <div>
               <Label htmlFor="phone">Phone Number *</Label>
               <Input
                 id="phone"
-                value={personalInfo.phone}
-                onChange={(e) => handlePersonalInfoChange('phone', e.target.value)}
-                placeholder="+91 98765 43210"
+                value={formData.phone || ""}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="companyEmail">Company Email *</Label>
+              <Label htmlFor="companyEmail">Company Email</Label>
               <Input
                 id="companyEmail"
-                type="email"
-                value={personalInfo.companyEmail}
+                value={profileData?.companyEmail || ""}
                 disabled
                 className="bg-gray-50"
               />
@@ -398,218 +323,149 @@ export default function HrProfilePage() {
               <Input
                 id="personalEmail"
                 type="email"
-                value={personalInfo.personalEmail}
-                onChange={(e) => handlePersonalInfoChange('personalEmail', e.target.value)}
-                placeholder="personal@example.com"
+                value={formData.personalEmail || ""}
+                onChange={(e) => handleInputChange('personalEmail', e.target.value)}
               />
             </div>
           </div>
-
-          {/* Emergency Contact */}
-          <div className="space-y-4">
-            <h4 className="font-medium flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Emergency Contact
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="emergencyName">Contact Name</Label>
-                <Input
-                  id="emergencyName"
-                  value={personalInfo.emergencyContact.name}
-                  onChange={(e) => handlePersonalInfoChange('emergencyContact.name', e.target.value)}
-                  placeholder="Emergency contact name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="emergencyPhone">Phone Number</Label>
-                <Input
-                  id="emergencyPhone"
-                  value={personalInfo.emergencyContact.phone}
-                  onChange={(e) => handlePersonalInfoChange('emergencyContact.phone', e.target.value)}
-                  placeholder="+91 98765 43210"
-                />
-              </div>
-              <div>
-                <Label htmlFor="emergencyRelation">Relation</Label>
-                <Input
-                  id="emergencyRelation"
-                  value={personalInfo.emergencyContact.relation}
-                  onChange={(e) => handlePersonalInfoChange('emergencyContact.relation', e.target.value)}
-                  placeholder="Father/Mother/Spouse"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Address */}
-          <div className="space-y-4">
-            <h4 className="font-medium flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Address Information
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <Label htmlFor="street">Street Address</Label>
-                <Input
-                  id="street"
-                  value={personalInfo.address.street}
-                  onChange={(e) => handlePersonalInfoChange('address.street', e.target.value)}
-                  placeholder="Enter street address"
-                />
-              </div>
-              <div>
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
-                  value={personalInfo.address.city}
-                  onChange={(e) => handlePersonalInfoChange('address.city', e.target.value)}
-                  placeholder="Enter city"
-                />
-              </div>
-              <div>
-                <Label htmlFor="state">State</Label>
-                <Input
-                  id="state"
-                  value={personalInfo.address.state}
-                  onChange={(e) => handlePersonalInfoChange('address.state', e.target.value)}
-                  placeholder="Enter state"
-                />
-              </div>
-              <div>
-                <Label htmlFor="pincode">Pincode</Label>
-                <Input
-                  id="pincode"
-                  value={personalInfo.address.pincode}
-                  onChange={(e) => handlePersonalInfoChange('address.pincode', e.target.value)}
-                  placeholder="Enter pincode"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Qualification & Experience */}
-
-          <Button onClick={savePersonalInfo} disabled={saving}>
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? "Saving..." : "Save Personal Information"}
-          </Button>
         </CardContent>
       </Card>
-    </div>
-  )
 
-  const renderBusinessSettings = () => (
-    <div className="space-y-6">
+      {/* Emergency Contact */}
       <Card>
         <CardHeader>
-          <CardTitle>Employment Details</CardTitle>
-          <CardDescription>Update your professional and employment information</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <UserPlus className="h-5 w-5" />
+            Emergency Contact
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="emergencyContact.name">Contact Name</Label>
+              <Input
+                id="emergencyContact.name"
+                value={formData.emergencyContact?.name || ""}
+                onChange={(e) => handleInputChange('emergencyContact.name', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="emergencyContact.phone">Phone Number</Label>
+              <Input
+                id="emergencyContact.phone"
+                value={formData.emergencyContact?.phone || ""}
+                onChange={(e) => handleInputChange('emergencyContact.phone', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="emergencyContact.relation">Relation</Label>
+              <Input
+                id="emergencyContact.relation"
+                value={formData.emergencyContact?.relation || ""}
+                onChange={(e) => handleInputChange('emergencyContact.relation', e.target.value)}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <UserPlus className="h-5 w-5" />
+            Address Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <Label htmlFor="address.street">Street Address</Label>
+              <Input
+                id="address.street"
+                value={formData.address?.street || ""}
+                onChange={(e) => handleInputChange('address.street', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="address.city">City</Label>
+              <Input
+                id="address.city"
+                value={formData.address?.city || ""}
+                onChange={(e) => handleInputChange('address.city', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="address.state">State</Label>
+              <Input
+                id="address.state"
+                value={formData.address?.state || ""}
+                onChange={(e) => handleInputChange('address.state', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="address.pincode">Pincode</Label>
+              <Input
+                id="address.pincode"
+                value={formData.address?.pincode || ""}
+                onChange={(e) => handleInputChange('address.pincode', e.target.value)}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Qualifications & Experience */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <GraduationCap className="h-5 w-5" />
+            Qualifications & Experience
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="employeeType">Employee Type</Label>
-              <Select value={businessInfo.employeeType} onValueChange={(value) => handleBusinessInfoChange('employeeType', value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="full-time">Full Time</SelectItem>
-                  <SelectItem value="part-time">Part Time</SelectItem>
-                  <SelectItem value="contract">Contract</SelectItem>
-                  <SelectItem value="intern">Intern</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="department">Department</Label>
+              <Label htmlFor="qualification.degree">Highest Qualification</Label>
               <Input
-                id="department"
-                value={businessInfo.department}
-                onChange={(e) => handleBusinessInfoChange('department', e.target.value)}
-                placeholder="Human Resources"
+                id="qualification.degree"
+                value={formData.qualification?.degree || ""}
+                onChange={(e) => handleInputChange('qualification.degree', e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="designation">Designation</Label>
+              <Label htmlFor="experience">Total Experience (Years)</Label>
               <Input
-                id="designation"
-                value={businessInfo.designation}
-                onChange={(e) => handleBusinessInfoChange('designation', e.target.value)}
-                placeholder="HR Manager"
-              />
-            </div>
-            <div>
-              <Label htmlFor="deptStatus">Department Status</Label>
-              <Select value={businessInfo.deptStatus} onValueChange={(value) => handleBusinessInfoChange('deptStatus', value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="on-leave">On Leave</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="joiningDate">Joining Date</Label>
-              <Input
-                id="joiningDate"
-                type="date"
-                value={businessInfo.joiningDate}
-                onChange={(e) => handleBusinessInfoChange('joiningDate', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="confirmationDate">Confirmation Date</Label>
-              <Input
-                id="confirmationDate"
-                type="date"
-                value={businessInfo.confirmationDate}
-                onChange={(e) => handleBusinessInfoChange('confirmationDate', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="probationPeriod">Probation Period (Months)</Label>
-              <Input
-                id="probationPeriod"
+                id="experience"
                 type="number"
-                value={businessInfo.probationPeriod}
-                onChange={(e) => handleBusinessInfoChange('probationPeriod', parseInt(e.target.value) || 0)}
-                placeholder="6"
+                value={formData.experience || 0}
+                onChange={(e) => handleInputChange('experience', parseInt(e.target.value) || 0)}
               />
             </div>
             <div>
-              <Label htmlFor="performanceRating">Performance Rating (1-5)</Label>
+              <Label htmlFor="qualification.institution">Institution</Label>
               <Input
-                id="performanceRating"
-                type="number"
-                min="1"
-                max="5"
-                value={businessInfo.performanceRating || ""}
-                onChange={(e) => handleBusinessInfoChange('performanceRating', e.target.value ? parseFloat(e.target.value) : null)}
-                placeholder="4.5"
+                id="qualification.institution"
+                value={formData.qualification?.institution || ""}
+                onChange={(e) => handleInputChange('qualification.institution', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="qualification.year">Year of Completion</Label>
+              <Input
+                id="qualification.year"
+                value={formData.qualification?.year || ""}
+                onChange={(e) => handleInputChange('qualification.year', e.target.value)}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <Label htmlFor="previousCompany">Previous Company</Label>
+              <Input
+                id="previousCompany"
+                value={formData.previousCompany || ""}
+                onChange={(e) => handleInputChange('previousCompany', e.target.value)}
               />
             </div>
           </div>
-
-          <div>
-            <Label htmlFor="notes">Additional Notes</Label>
-            <Textarea
-              id="notes"
-              value={businessInfo.notes}
-              onChange={(e) => handleBusinessInfoChange('notes', e.target.value)}
-              placeholder="Any additional information or notes..."
-              rows={3}
-            />
-          </div>
-
-          <Button onClick={saveBusinessInfo} disabled={saving}>
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? "Saving..." : "Save Business Information"}
-          </Button>
         </CardContent>
       </Card>
     </div>
@@ -620,7 +476,6 @@ export default function HrProfilePage() {
       <Card>
         <CardHeader>
           <CardTitle>Notification Preferences</CardTitle>
-          <CardDescription>Configure how you want to receive notifications</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
@@ -672,7 +527,6 @@ export default function HrProfilePage() {
       <Card>
         <CardHeader>
           <CardTitle>Change Password</CardTitle>
-          <CardDescription>Update your password to keep your account secure</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -680,9 +534,8 @@ export default function HrProfilePage() {
             <Input
               id="currentPassword"
               type="password"
-              value={passwordInfo.currentPassword}
-              onChange={(e) => handlePasswordChange('currentPassword', e.target.value)}
-              placeholder="Enter current password"
+              value={passwordData.currentPassword}
+              onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
             />
           </div>
           <div>
@@ -690,9 +543,8 @@ export default function HrProfilePage() {
             <Input
               id="newPassword"
               type="password"
-              value={passwordInfo.newPassword}
-              onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
-              placeholder="Enter new password"
+              value={passwordData.newPassword}
+              onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
             />
           </div>
           <div>
@@ -700,63 +552,70 @@ export default function HrProfilePage() {
             <Input
               id="confirmPassword"
               type="password"
-              value={passwordInfo.confirmPassword}
-              onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
-              placeholder="Confirm new password"
+              value={passwordData.confirmPassword}
+              onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
             />
           </div>
-          <Button onClick={changePassword} disabled={saving}>
-            <Key className="h-4 w-4 mr-2" />
-            {saving ? "Updating..." : "Update Password"}
+          <Button onClick={handleChangePassword} disabled={saving}>
+            {saving ? "Updating..." : "Change Password"}
           </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Two-Factor Authentication</CardTitle>
-          <CardDescription>Add an extra layer of security to your account</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Shield className="h-5 w-5 text-gray-400" />
-              <div>
-                <p className="font-medium">Two-Factor Authentication</p>
-                <p className="text-sm text-gray-500">Require a verification code for login</p>
-              </div>
-            </div>
-            <Switch
-              checked={settings.twoFactorAuth}
-              onCheckedChange={(checked) => handleSettingChange("twoFactorAuth", checked)}
-            />
-          </div>
-          {settings.twoFactorAuth && (
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800">
-                Two-factor authentication is enabled. Use your authenticator app to generate codes.
-              </p>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
   )
 
-  const renderSectionContent = () => {
-    if (loading) {
-      return (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+  const renderBusinessInfo = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Building className="h-5 w-5" />
+          Business Information
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label>Employee Code</Label>
+            <Input value={profileData?.empCode || ""} disabled className="bg-gray-50" />
+          </div>
+          <div>
+            <Label>Designation</Label>
+            <Input value={profileData?.businessData?.designation || "HR Executive"} disabled className="bg-gray-50" />
+          </div>
+          <div>
+            <Label>Department</Label>
+            <Input value={profileData?.businessData?.department || "Human Resources"} disabled className="bg-gray-50" />
+          </div>
+          <div>
+            <Label>Employee Type</Label>
+            <Input value={profileData?.businessData?.employeeType || "Full-time"} disabled className="bg-gray-50" />
+          </div>
+          <div>
+            <Label>Joining Date</Label>
+            <Input
+              value={profileData?.businessData?.joiningDate ? new Date(profileData.businessData.joiningDate).toLocaleDateString() : ""}
+              disabled
+              className="bg-gray-50"
+            />
+          </div>
+          <div>
+            <Label>Status</Label>
+            <Input value={profileData?.businessData?.deptStatus || "Active"} disabled className="bg-gray-50" />
+          </div>
         </div>
-      )
-    }
+      </CardContent>
+    </Card>
+  )
 
+  const renderSectionContent = () => {
     switch (activeSection) {
       case "profile":
-        return renderProfileSettings()
-      case "business":
-        return renderBusinessSettings()
+        return (
+          <div className="space-y-6">
+            {renderProfileSettings()}
+            {renderBusinessInfo()}
+          </div>
+        )
       case "notifications":
         return renderNotificationSettings()
       case "security":
@@ -766,22 +625,40 @@ export default function HrProfilePage() {
     }
   }
 
+  if (loading) {
+    return (
+      <DashboardLayout title="HR Profile Settings">
+        <div className="p-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
   return (
-    <DashboardLayout>
+    <DashboardLayout title="HR Profile Settings">
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">HR Profile Settings</h1>
-            <p className="text-gray-600">Manage your account and professional information</p>
+            <p className="text-gray-600">Manage your account and preferences</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-              {profileData?.empCode || 'HR001'}
-            </Badge>
-            <Badge variant={profileData?.status === 'active' ? 'default' : 'secondary'}>
-              {profileData?.status || 'active'}
-            </Badge>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                {profileData?.empCode || 'HR001'}
+              </Badge>
+              <Badge variant={profileData?.status === 'active' ? 'default' : 'secondary'}>
+                {profileData?.status || 'active'}
+              </Badge>
+            </div>
+            <Button onClick={handleSaveProfile} disabled={saving}>
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
           </div>
         </div>
 

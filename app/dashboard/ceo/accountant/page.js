@@ -1,11 +1,11 @@
 "use client"
 
-import CeoSidebar from "../../../../components/CeoComponent/CeoSidebar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../components/ui/card"
-import { Badge } from "../../../../components/ui/badge"
-import { Progress } from "../../../../components/ui/progress"
-import { Avatar, AvatarFallback } from "../../../../components/ui/avatar"
-import { DollarSign, TrendingUp, TrendingDown, Calculator, CreditCard, AlertTriangle, CheckCircle } from "lucide-react"
+import DashboardLayout from "@/components/CeoComponent/dashboard-layout"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { DollarSign, TrendingUp, TrendingDown, Calculator, CreditCard, AlertTriangle, CheckCircle, Users, Target, Calendar } from "lucide-react"
 import {
   BarChart,
   Bar,
@@ -73,26 +73,31 @@ export default function CeoAccountantPage() {
   ]
 
   return (
-    <div className="flex h-screen bg-background">
-      <CeoSidebar activeSection="accountant" />
-      <main className="flex-1 overflow-auto p-6 space-y-6">
-        {/* Accounting Department Header */}
+    <DashboardLayout title="Dashboard">
+      <div className="p-6 space-y-6">
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Finance & Accounting</h1>
-            <p className="text-muted-foreground">Financial health and accounting operations</p>
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-green-100 rounded-lg">
+              <DollarSign className="w-8 h-8 text-green-600" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">Finance & Accounting</h1>
+              <p className="text-muted-foreground">Monitor financial health and accounting operations</p>
+            </div>
           </div>
-          <Badge variant="default" className="bg-green-500">
-            <DollarSign className="w-4 h-4 mr-1" />${financialMetrics.netProfit.toLocaleString()} Net Profit
+          <Badge variant="secondary" className="text-sm px-3 py-1 bg-green-100 text-green-800">
+            <DollarSign className="w-4 h-4 mr-1" />
+            ${financialMetrics.netProfit.toLocaleString()} Net Profit
           </Badge>
         </div>
 
         {/* Key Financial Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center">
-                <TrendingUp className="w-4 h-4 mr-2 text-green-500" />
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-green-500" />
                 Monthly Revenue
               </CardTitle>
             </CardHeader>
@@ -100,14 +105,17 @@ export default function CeoAccountantPage() {
               <div className="text-2xl font-bold text-green-600">
                 ${financialMetrics.monthlyRevenue.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">+12.5% from last month</p>
+              <div className="flex items-center gap-1 text-xs text-green-600">
+                <TrendingUp className="w-3 h-3" />
+                +12.5% from last month
+              </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center">
-                <TrendingDown className="w-4 h-4 mr-2 text-red-500" />
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <TrendingDown className="w-4 h-4 text-red-500" />
                 Monthly Expenses
               </CardTitle>
             </CardHeader>
@@ -115,33 +123,36 @@ export default function CeoAccountantPage() {
               <div className="text-2xl font-bold text-red-600">
                 ${financialMetrics.monthlyExpenses.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">+3.2% from last month</p>
+              <div className="flex items-center gap-1 text-xs text-red-600">
+                <TrendingUp className="w-3 h-3" />
+                +3.2% from last month
+              </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center">
-                <Calculator className="w-4 h-4 mr-2 text-blue-500" />
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Calculator className="w-4 h-4 text-blue-500" />
                 Profit Margin
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">{financialMetrics.profitMargin}%</div>
-              <p className="text-xs text-muted-foreground">Above target (20%)</p>
+              <div className="text-xs text-blue-600">Above target (20%)</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center">
-                <CreditCard className="w-4 h-4 mr-2 text-purple-500" />
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-purple-500" />
                 Cash Flow
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-purple-600">${financialMetrics.cashFlow.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">Positive trend</p>
+              <div className="text-xs text-purple-600">Positive trend</div>
             </CardContent>
           </Card>
         </div>
@@ -151,7 +162,10 @@ export default function CeoAccountantPage() {
           {/* Revenue vs Expenses */}
           <Card>
             <CardHeader>
-              <CardTitle>Revenue vs Expenses</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Revenue vs Expenses
+              </CardTitle>
               <CardDescription>Monthly financial performance</CardDescription>
             </CardHeader>
             <CardContent>
@@ -171,7 +185,10 @@ export default function CeoAccountantPage() {
           {/* Profit Trend */}
           <Card>
             <CardHeader>
-              <CardTitle>Profit Trend</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="w-5 h-5" />
+                Profit Trend
+              </CardTitle>
               <CardDescription>Monthly profit over time</CardDescription>
             </CardHeader>
             <CardContent>
@@ -193,7 +210,10 @@ export default function CeoAccountantPage() {
           {/* Expense Breakdown */}
           <Card>
             <CardHeader>
-              <CardTitle>Expense Breakdown</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Calculator className="w-5 h-5" />
+                Expense Breakdown
+              </CardTitle>
               <CardDescription>Current month expense categories</CardDescription>
             </CardHeader>
             <CardContent>
@@ -220,7 +240,10 @@ export default function CeoAccountantPage() {
           {/* Weekly Cash Flow */}
           <Card>
             <CardHeader>
-              <CardTitle>Weekly Cash Flow</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5" />
+                Weekly Cash Flow
+              </CardTitle>
               <CardDescription>Inflow vs outflow this month</CardDescription>
             </CardHeader>
             <CardContent>
@@ -243,16 +266,19 @@ export default function CeoAccountantPage() {
           {/* Accounting Team */}
           <Card>
             <CardHeader>
-              <CardTitle>Accounting Team</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Accounting Team
+              </CardTitle>
               <CardDescription>Team performance and workload</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {accountingTeam.map((member, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                     <div className="flex items-center space-x-3">
-                      <Avatar>
-                        <AvatarFallback>
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback className="bg-green-100 text-green-600">
                           {member.name
                             .split(" ")
                             .map((n) => n[0])
@@ -262,13 +288,19 @@ export default function CeoAccountantPage() {
                       <div>
                         <div className="font-medium">{member.name}</div>
                         <div className="text-sm text-muted-foreground">{member.role}</div>
+                        <div className="text-xs text-blue-600">{member.tasks} tasks</div>
                       </div>
                     </div>
-                    <div className="text-right space-y-1">
-                      <Badge variant={member.status === "active" ? "default" : "secondary"}>{member.status}</Badge>
-                      <div className="text-xs text-muted-foreground">
-                        {member.tasks} tasks • {member.efficiency}%
-                      </div>
+                    <div className="text-right">
+                      <Badge 
+                        variant={
+                          member.status === "active" ? "default" : 
+                          member.status === "busy" ? "secondary" : "outline"
+                        }
+                      >
+                        {member.status}
+                      </Badge>
+                      <div className="text-sm text-muted-foreground mt-1">{member.efficiency}% efficiency</div>
                     </div>
                   </div>
                 ))}
@@ -279,31 +311,37 @@ export default function CeoAccountantPage() {
           {/* Pending Tasks */}
           <Card>
             <CardHeader>
-              <CardTitle>Pending Financial Tasks</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="w-5 h-5" />
+                Pending Financial Tasks
+              </CardTitle>
               <CardDescription>Critical accounting deadlines</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {pendingTasks.map((task, index) => (
-                  <div key={index} className="p-3 border rounded-lg space-y-2">
-                    <div className="flex items-center justify-between">
+                  <div key={index} className="p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center justify-between mb-2">
                       <div className="font-medium">{task.task}</div>
-                      <Badge
-                        variant={
-                          task.priority === "high"
-                            ? "destructive"
-                            : task.priority === "medium"
-                              ? "default"
-                              : "secondary"
-                        }
-                      >
-                        {task.priority}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={
+                            task.priority === "high"
+                              ? "destructive"
+                              : task.priority === "medium"
+                                ? "default"
+                                : "secondary"
+                          }
+                        >
+                          {task.priority}
+                        </Badge>
+                        <Badge variant="outline">{task.progress}%</Badge>
+                      </div>
                     </div>
-                    <Progress value={task.progress} />
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span>Progress: {task.progress}%</span>
-                      <span>Due: {task.deadline}</span>
+                    <Progress value={task.progress} className="mb-2" />
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Calendar className="w-3 h-3 mr-1" />
+                      Due: {task.deadline}
                     </div>
                   </div>
                 ))}
@@ -315,12 +353,15 @@ export default function CeoAccountantPage() {
         {/* Financial Alerts */}
         <Card>
           <CardHeader>
-            <CardTitle>Financial Alerts</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Financial Alerts
+            </CardTitle>
             <CardDescription>Important financial notifications</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center p-4 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors">
                 <AlertTriangle className="w-5 h-5 text-red-500 mr-3" />
                 <div>
                   <div className="font-medium text-red-800">Outstanding Invoices</div>
@@ -329,7 +370,7 @@ export default function CeoAccountantPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition-colors">
                 <AlertTriangle className="w-5 h-5 text-yellow-500 mr-3" />
                 <div>
                   <div className="font-medium text-yellow-800">Budget Variance</div>
@@ -338,7 +379,7 @@ export default function CeoAccountantPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors">
                 <CheckCircle className="w-5 h-5 text-green-500 mr-3" />
                 <div>
                   <div className="font-medium text-green-800">Tax Compliance</div>
@@ -348,7 +389,7 @@ export default function CeoAccountantPage() {
             </div>
           </CardContent>
         </Card>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   )
 }
