@@ -24,6 +24,7 @@ import {
   CheckCircle,
 } from "lucide-react"
 import { toast } from "../ui/use-toast"
+import { ImageUploadService } from '../../services/imageUploadService';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
@@ -80,48 +81,32 @@ export default function HireTelecallerForm({ onClose, onSuccess }) {
   }
 
   const handleFileChange = async (field, file) => {
-    if (!file) return
+    if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      setFormErrors((prev) => ({ ...prev, photo: "Please select an image smaller than 5MB" }))
-      return
-    }
-
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"]
-    if (!allowedTypes.includes(file.type)) {
-      setFormErrors((prev) => ({ ...prev, photo: "Please select a JPG, PNG, or GIF image" }))
-      return
-    }
-
-    setUploadingImage(true)
-    setFormErrors((prev) => ({ ...prev, photo: "" }))
+    setUploadingImage(true);
+    setFormErrors((prev) => ({ ...prev, photo: "" }));
 
     try {
-      // ✅ Convert file to Base64 string
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const base64Image = reader.result // ✅ This is a string now
 
-        setFormData((prev) => ({
-          ...prev,
-          [field]: base64Image, // ✅ Store as string, not File object
-          photoUrl: base64Image, // still use it for preview
-        }))
+      const imageUrl = await ImageUploadService.uploadToCloudinary(file);
 
-        toast({
-          title: "Image selected successfully",
-          description: "Base64 string generated — ready to send to backend.",
-        })
-      }
+      setFormData((prev) => ({
+        ...prev,
+        [field]: imageUrl, // Store Cloudinary URL
+        photoUrl: imageUrl, // For preview
+      }));
 
-      reader.readAsDataURL(file)
+      toast({
+        title: "Image uploaded successfully",
+        description: "Image ready to use",
+      });
+
     } catch (error) {
-      console.error("Error handling image:", error)
-      setFormErrors((prev) => ({ ...prev, photo: "Something went wrong. Please try again." }))
+      setFormErrors((prev) => ({ ...prev, photo: error.message }));
     } finally {
-      setUploadingImage(false)
+      setUploadingImage(false);
     }
-  }
+  };
 
   const validateStep = (step) => {
     const errors = {}
@@ -304,18 +289,16 @@ export default function HireTelecallerForm({ onClose, onSuccess }) {
                     className="flex flex-col items-center z-10 bg-gradient-to-r from-orange-50 to-red-50 px-2"
                   >
                     <div
-                      className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${
-                        currentStep >= step.number
+                      className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${currentStep >= step.number
                           ? "bg-orange-500 border-orange-500 text-white shadow-lg"
                           : "border-gray-300 text-gray-400 bg-white"
-                      }`}
+                        }`}
                     >
                       {currentStep > step.number ? <Check className="w-5 h-5" /> : <step.icon className="w-5 h-5" />}
                     </div>
                     <p
-                      className={`text-xs mt-2 text-center font-medium max-w-20 ${
-                        currentStep >= step.number ? "text-orange-600" : "text-gray-500"
-                      }`}
+                      className={`text-xs mt-2 text-center font-medium max-w-20 ${currentStep >= step.number ? "text-orange-600" : "text-gray-500"
+                        }`}
                     >
                       {step.title}
                     </p>
@@ -507,11 +490,10 @@ export default function HireTelecallerForm({ onClose, onSuccess }) {
                     Profile Photo (Optional)
                   </Label>
                   <div
-                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                      formErrors.photo
+                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${formErrors.photo
                         ? "border-red-300 bg-red-50"
                         : "border-gray-300 hover:border-orange-400 hover:bg-orange-50"
-                    }`}
+                      }`}
                   >
                     <Camera className="w-8 h-8 mx-auto mb-3 text-gray-400" />
                     <Input

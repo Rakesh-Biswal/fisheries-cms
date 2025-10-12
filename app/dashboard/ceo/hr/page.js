@@ -1,5 +1,6 @@
 "use client"
 
+import DashboardLayout from "@/components/CeoComponent/dashboard-layout"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import CeoSidebar from "@/components/CeoComponent/CeoSidebar"
@@ -154,94 +155,95 @@ export default function CeoHrPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <CeoSidebar activeSection="hr" />
-      <main className="flex-1 overflow-auto p-4 md:p-6 space-y-4 md:space-y-6">
-        {/* HR Department Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Human Resources</h1>
-            <p className="text-muted-foreground">Employee management and organizational development</p>
+    <DashboardLayout>
+      <div className="flex min-h-screen bg-background">
+        <main className="flex-1 overflow-auto p-4 md:p-6 space-y-4 md:space-y-6">
+          {/* HR Department Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold">Human Resources</h1>
+              <p className="text-muted-foreground">Employee management and organizational development</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Badge variant="default" className="bg-blue-500 w-fit">
+                <Users className="w-4 h-4 mr-1" />
+                {hrData.hrEmployees.length} HR Staff
+              </Badge>
+              <Button onClick={() => setShowHireForm(true)} size="sm">
+                <Plus className="w-4 h-4 mr-1" />
+                Hire New HR
+              </Button>
+            </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Badge variant="default" className="bg-blue-500 w-fit">
-              <Users className="w-4 h-4 mr-1" />
-              {hrData.hrEmployees.length} HR Staff
-            </Badge>
-            <Button onClick={() => setShowHireForm(true)} size="sm">
-              <Plus className="w-4 h-4 mr-1" />
-              Hire New HR
-            </Button>
+
+          {/* Key HR Metrics */}
+          <HrMetricsCards hrMetrics={hrMetrics} />
+
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {/* Recruitment Pipeline */}
+            <RecruitmentPipelineChart data={recruitmentPipeline} />
+
+            {/* Turnover Trend */}
+            <TurnoverTrendChart data={monthlyTurnover} />
           </div>
-        </div>
 
-        {/* Key HR Metrics */}
-        <HrMetricsCards hrMetrics={hrMetrics} />
+          {/* Department Distribution & Training */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {/* Department Distribution */}
+            <DepartmentDistributionChart data={departmentDistribution} />
 
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          {/* Recruitment Pipeline */}
-          <RecruitmentPipelineChart data={recruitmentPipeline} />
+            {/* Training Budget */}
+            <TrainingBudgetCard hrMetrics={hrMetrics} />
+          </div>
 
-          {/* Turnover Trend */}
-          <TurnoverTrendChart data={monthlyTurnover} />
-        </div>
+          {/* HR Team Members */}
+          <Card>
+            <CardHeader>
+              <CardTitle>HR Team Members</CardTitle>
+              <CardDescription>Current HR staff and their details</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {hrData.hrEmployees.map((employee, index) => (
+                  <div
+                    key={employee._id || index}
+                    className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => handleEmployeeClick(employee._id)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Avatar>
+                        <AvatarImage src={employee.photo || "/placeholder.svg"} />
+                        <AvatarFallback>
+                          {employee.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium">{employee.name}</div>
+                        <div className="text-sm text-muted-foreground">{employee.designation}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Joined: {employee.businessData?.joiningDate ? new Date(employee.businessData.joiningDate).toLocaleDateString() : "N/A"}
+                        </div>
 
-        {/* Department Distribution & Training */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          {/* Department Distribution */}
-          <DepartmentDistributionChart data={departmentDistribution} />
-
-          {/* Training Budget */}
-          <TrainingBudgetCard hrMetrics={hrMetrics} />
-        </div>
-
-        {/* HR Team Members */}
-        <Card>
-          <CardHeader>
-            <CardTitle>HR Team Members</CardTitle>
-            <CardDescription>Current HR staff and their details</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {hrData.hrEmployees.map((employee, index) => (
-                <div
-                  key={employee._id || index}
-                  className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleEmployeeClick(employee._id)}
-                >
-                  <div className="flex items-center space-x-3">
-                    <Avatar>
-                      <AvatarImage src={employee.photo || "/placeholder.svg"} />
-                      <AvatarFallback>
-                        {employee.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-medium">{employee.name}</div>
-                      <div className="text-sm text-muted-foreground">{employee.designation}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Joined: {employee.businessData?.joiningDate ? new Date(employee.businessData.joiningDate).toLocaleDateString() : "N/A"}
                       </div>
-
+                    </div>
+                    <div className="text-right space-y-1">
+                      <Badge variant={employee.status === "active" ? "default" : "secondary"}>{employee.status}</Badge>
+                      <div className="text-xs text-muted-foreground">{employee.employeeType}</div>
                     </div>
                   </div>
-                  <div className="text-right space-y-1">
-                    <Badge variant={employee.status === "active" ? "default" : "secondary"}>{employee.status}</Badge>
-                    <div className="text-xs text-muted-foreground">{employee.employeeType}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Hire HR Form Modal */}
-        {showHireForm && <HireHrForm onClose={() => setShowHireForm(false)} onSuccess={handleHireSuccess} />}
-      </main>
-    </div>
+          {/* Hire HR Form Modal */}
+          {showHireForm && <HireHrForm onClose={() => setShowHireForm(false)} onSuccess={handleHireSuccess} />}
+        </main>
+      </div>
+    </DashboardLayout>
   )
 }

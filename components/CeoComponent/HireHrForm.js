@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Badge } from "../ui/badge"
 import { User, CreditCard, FileText, Camera, ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react"
 import { toast } from "../ui/use-toast"
-import { uploadToR2 } from "../../lib/cloudflare-r2"
+import {ImageUploadService} from "../../services/imageUploadService"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -52,46 +52,27 @@ export default function HireHrForm({ onClose, onSuccess }) {
     const handleFileChange = async (field, file) => {
         if (!file) return;
 
-        // Check file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            setFormErrors(prev => ({ ...prev, photo: "Please select an image smaller than 5MB" }))
-            return;
-        }
-
-        // Check file type
-        const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"];
-        if (!allowedTypes.includes(file.type)) {
-            setFormErrors(prev => ({ ...prev, photo: "Please select a JPG, PNG, or GIF image" }))
-            return;
-        }
-
         setUploadingImage(true);
         setFormErrors(prev => ({ ...prev, photo: "" }))
 
         try {
-            // Generate a unique filename (still useful for form data)
-            const fileExtension = file.name.split('.').pop();
-            const timestamp = Date.now();
-            const randomString = Math.random().toString(36).substring(2, 8);
-            const fileName = `hr-profile-${timestamp}-${randomString}.${fileExtension}`;
+            // Upload to Cloudinary and get the URL
+            const imageUrl = await ImageUploadService.uploadToCloudinary(file);
 
-            // 🔧 Instead of uploading, just set a demo URL
-            const demoUrl = "https://via.placeholder.com/300x300.png?text=HR+Profile";
-
-            // Update form data
+            
             setFormData((prev) => ({
                 ...prev,
-                [field]: file,
-                photoUrl: demoUrl // ✅ use demo image
+                [field]: imageUrl, // Store Cloudinary URL
+                photoUrl: imageUrl // For preview
             }));
 
             toast({
-                title: "Image set (demo)",
-                description: "Profile photo URL has been set to a demo placeholder",
+                title: "Image uploaded successfully",
+                description: "Profile photo has been uploaded to Cloudinary",
             });
         } catch (error) {
-            console.error("Error setting demo image:", error);
-            setFormErrors(prev => ({ ...prev, photo: "Something went wrong while setting the demo image" }))
+            console.error("Error uploading image:", error);
+            setFormErrors(prev => ({ ...prev, photo: error.message }))
         } finally {
             setUploadingImage(false);
         }
@@ -270,8 +251,8 @@ export default function HireHrForm({ onClose, onSuccess }) {
                                     )}
                                     <div
                                         className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${currentStep >= step.number
-                                                ? "bg-blue-500 border-blue-500 text-white"
-                                                : "border-gray-300 text-gray-400"
+                                            ? "bg-blue-500 border-blue-500 text-white"
+                                            : "border-gray-300 text-gray-400"
                                             }`}
                                     >
                                         {currentStep > step.number ? <Check className="w-4 h-4" /> : <step.icon className="w-4 h-4" />}
@@ -450,7 +431,7 @@ export default function HireHrForm({ onClose, onSuccess }) {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="employeeType" className="text-sm font-medium">Employee Type *</Label>
-                                    <Select 
+                                    <Select
                                         onValueChange={(value) => handleInputChange("employeeType", value)}
                                         value={formData.employeeType}
                                     >
@@ -468,7 +449,7 @@ export default function HireHrForm({ onClose, onSuccess }) {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="designation" className="text-sm font-medium">Designation *</Label>
-                                    <Select 
+                                    <Select
                                         onValueChange={(value) => handleInputChange("designation", value)}
                                         value={formData.designation}
                                     >

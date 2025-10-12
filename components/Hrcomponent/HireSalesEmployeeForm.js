@@ -13,19 +13,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog"
-import { 
-  User, 
-  CreditCard, 
-  FileText, 
-  ArrowLeft, 
-  ArrowRight, 
-  Check, 
-  Loader2, 
-  Banknote, 
+import {
+  User,
+  CreditCard,
+  FileText,
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Loader2,
+  Banknote,
   AlertCircle,
-  CheckCircle 
+  CheckCircle
 } from "lucide-react"
 import { toast } from "../ui/use-toast"
+import { Textarea } from "../ui/textarea"
+import {ImageUploadService} from "@/services/ImageUploadService"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
@@ -81,47 +83,32 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
   }
 
   const handleFileChange = async (field, file) => {
-    if (!file) return
+    if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      setFormErrors((prev) => ({ ...prev, photo: "Please select an image smaller than 5MB" }))
-      return
-    }
-
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"]
-    if (!allowedTypes.includes(file.type)) {
-      setFormErrors((prev) => ({ ...prev, photo: "Please select a JPG, PNG, or GIF image" }))
-      return
-    }
-
-    setUploadingImage(true)
-    setFormErrors((prev) => ({ ...prev, photo: "" }))
+    setUploadingImage(true);
+    setFormErrors((prev) => ({ ...prev, photo: "" }));
 
     try {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const base64Image = reader.result
 
-        setFormData((prev) => ({
-          ...prev,
-          [field]: base64Image,
-          photoUrl: base64Image,
-        }))
+      const imageUrl = await ImageUploadService.uploadToCloudinary(file);
 
-        toast({
-          title: "Image selected successfully",
-          description: "Base64 string generated — ready to send to backend.",
-        })
-      }
+      setFormData((prev) => ({
+        ...prev,
+        [field]: imageUrl, // Store Cloudinary URL
+        photoUrl: imageUrl, // For preview
+      }));
 
-      reader.readAsDataURL(file)
+      toast({
+        title: "Image uploaded successfully",
+        description: "Image ready to use",
+      });
+
     } catch (error) {
-      console.error("Error handling image:", error)
-      setFormErrors((prev) => ({ ...prev, photo: "Something went wrong. Please try again." }))
+      setFormErrors((prev) => ({ ...prev, photo: error.message }));
     } finally {
-      setUploadingImage(false)
+      setUploadingImage(false);
     }
-  }
+  };
 
   const validateStep = (step) => {
     const errors = {}
@@ -274,7 +261,7 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
         phone: formData.phone.replace(/\D/g, ""),
         email: formData.email.trim(),
         password: formData.password,
-        
+
         // Documents & Personal Details
         aadhar: formData.aadhar.replace(/\D/g, ""),
         pan: formData.pan.trim().toUpperCase(),
@@ -285,7 +272,7 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
           phone: formData.emergencyContactPhone?.replace(/\D/g, "") || "",
           relation: formData.emergencyContactRelation?.trim() || "",
         },
-        
+
         // Banking Details
         bankAccount: {
           accountNumber: formData.accountNumber.trim(),
@@ -293,7 +280,7 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
           bankName: formData.bankName.trim(),
           branch: formData.branch.trim(),
         },
-        
+
         // Employment Details
         employeeType: formData.employeeType,
         department: formData.department,
@@ -323,12 +310,12 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
       if (response.ok) {
         setModalMessage(`${formData.name} has been successfully added as a Sales Employee!`)
         setShowSuccessModal(true)
-        
+
         toast({
           title: "Success!",
           description: "Sales employee hired successfully",
         })
-        
+
         setTimeout(() => {
           setShowSuccessModal(false)
           if (onSuccess) onSuccess(responseData)
@@ -341,7 +328,7 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
       console.error("Submission error:", error)
       setModalMessage(error.message || "Failed to hire Sales Employee. Please check your connection and try again.")
       setShowErrorModal(true)
-      
+
       toast({
         title: "Error",
         description: error.message || "Failed to submit form",
@@ -372,18 +359,16 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
                     className="flex flex-col items-center z-10 bg-gradient-to-r from-purple-50 to-pink-50 px-2"
                   >
                     <div
-                      className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${
-                        currentStep >= step.number
+                      className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300 ${currentStep >= step.number
                           ? "bg-purple-500 border-purple-500 text-white shadow-lg"
                           : "border-gray-300 text-gray-400 bg-white"
-                      }`}
+                        }`}
                     >
                       {currentStep > step.number ? <Check className="w-5 h-5" /> : <step.icon className="w-5 h-5" />}
                     </div>
                     <p
-                      className={`text-xs mt-2 text-center font-medium max-w-20 ${
-                        currentStep >= step.number ? "text-purple-600" : "text-gray-500"
-                      }`}
+                      className={`text-xs mt-2 text-center font-medium max-w-20 ${currentStep >= step.number ? "text-purple-600" : "text-gray-500"
+                        }`}
                     >
                       {step.title}
                     </p>
@@ -928,7 +913,7 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
                       <option value="East Zone">East Zone</option>
                       <option value="West Zone">West Zone</option>
                       <option value="Central Zone">Central Zone</option>
-                     
+
                     </select>
                     {formErrors.assignedZone && (
                       <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
@@ -1044,7 +1029,7 @@ export default function HireSalesEmployeeForm({ onClose, onSuccess }) {
           </div>
         </DialogContent>
       </Dialog>
-      
+
     </>
   )
 }
