@@ -2,9 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -56,6 +53,7 @@ export default function HRTM() {
         ])
       } catch (error) {
         console.error('Error fetching data:', error)
+        toast.error('Failed to load dashboard data')
       } finally {
         setLoading(prev => ({ ...prev, assigned: false, forwarded: false, meetings: false, stats: false }))
       }
@@ -74,7 +72,7 @@ export default function HRTM() {
       const response = await fetch(`${API_URL}/api/hr/tasks-meetings/assigned-tasks`, {
         credentials: 'include'
       })
-
+      
       if (response.ok) {
         const data = await response.json()
         setAssignedTasks(data.data || [])
@@ -92,7 +90,7 @@ export default function HRTM() {
       const response = await fetch(`${API_URL}/api/hr/tasks-meetings/forwarded-tasks`, {
         credentials: 'include'
       })
-
+      
       if (response.ok) {
         const data = await response.json()
         setForwardedTasks(data.data || [])
@@ -131,7 +129,7 @@ export default function HRTM() {
       const response = await fetch(`${API_URL}/api/hr/tasks-meetings/stats`, {
         credentials: 'include'
       })
-
+      
       if (response.ok) {
         const data = await response.json()
         setStats(data.data || {})
@@ -172,7 +170,7 @@ export default function HRTM() {
   }
 
   const handleTaskUpdated = (updatedTask) => {
-    setForwardedTasks(prev => prev.map(task =>
+    setForwardedTasks(prev => prev.map(task => 
       task._id === updatedTask._id ? updatedTask : task
     ))
     fetchStats()
@@ -256,13 +254,21 @@ export default function HRTM() {
         {/* Stats Cards */}
         <HrTaskStatsCards stats={stats} />
 
-        {/* Middle row: Assigned Tasks + Schedule */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          {/* Assigned Tasks from CEO */}
-          <div className="lg:col-span-2">
-            <AssignedTasks
-              tasks={assignedTasks}
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Left Column - Tasks */}
+          <div className="xl:col-span-2 space-y-6">
+            {/* Assigned Tasks */}
+            <AssignedTasks 
+              tasks={assignedTasks} 
               onForwardTask={handleForwardTask}
+            />
+
+            {/* Forwarded Tasks */}
+            <ForwardedTasksTable 
+              tasks={forwardedTasks}
+              onEditTask={handleEditForwardedTask}
+              onTaskDeleted={handleTaskDeleted}
             />
           </div>
 
@@ -417,38 +423,91 @@ export default function HRTM() {
                       .map(task => (
                         <div key={task._id} className="rounded-lg border border-muted p-3" onClick={() => router.push(`/dashboard/hr/tasks-meetings/assigned-ceo-task-detail/${task._id}`)}>
                           <div className="flex items-center justify-between">
-                            <h4 className="font-medium text-sm">{task.title}</h4>
-                            <Badge variant="outline" className="text-xs capitalize">
+                            <h4 className="font-medium text-sm text-gray-900">{task.title}</h4>
+                            <Badge 
+                              variant="outline" 
+                              className="text-xs capitalize"
+                              style={{
+                                backgroundColor: statusColors.bg,
+                                color: statusColors.text,
+                                borderColor: statusColors.border
+                              }}
+                            >
                               {task.status}
                             </Badge>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                          <p className="text-xs text-gray-600 mt-1 line-clamp-2">
                             {task.description}
                           </p>
                           <div className="flex items-center justify-between mt-2 text-xs">
-                            <span>Due: {new Date(task.deadline).toLocaleDateString()}</span>
-                            <span>{task.progress}%</span>
+                            <span className="text-gray-500">
+                              Due: {new Date(task.deadline).toLocaleDateString()}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 bg-gray-200 rounded-full h-1.5">
+                                <div 
+                                  className="bg-blue-600 h-1.5 rounded-full" 
+                                  style={{ width: `${task.progress}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-gray-700 font-medium">{task.progress}%</span>
+                            </div>
                           </div>
                         </div>
-                      ))}
-                    {assignedTasks.filter(task => task.status !== 'completed').length === 0 && (
-                      <div className="rounded-lg border border-muted p-6 text-sm text-muted-foreground text-center">
-                        No pending tasks for today.
+                      )
+                    },
+                  {assignedTasks.filter(task => task.status !== 'completed').length === 0 && (
+                    <div className="text-center py-6 text-gray-500 border-2 border-dashed border-gray-200 rounded-lg">
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Calendar className="h-6 w-6 text-gray-400" />
                       </div>
-                    )}
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </div>
+                      <p className="font-medium text-gray-600">No pending tasks</p>
+                      <p className="text-sm mt-1 text-gray-500">You're all caught up for today</p>
+                    </div>
+                  )}
+                </div>
 
-        {/* Forwarded Tasks Table */}
-        <ForwardedTasksTable
-          tasks={forwardedTasks}
-          onEditTask={handleEditForwardedTask}
-          onTaskDeleted={handleTaskDeleted}
-        />
+                {/* View All Tasks Button */}
+                {assignedTasks.filter(task => task.status !== 'completed').length > 0 && (
+                  <div className="mt-4 pt-3 border-t">
+                    <Button 
+                      variant="outline" 
+                      className="w-full text-sm"
+                      onClick={() => {/* Navigate to tasks page or expand view */}}
+                    >
+                      View All Tasks
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <Calendar className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-900">Pending Tasks</span>
+                </div>
+                <p className="text-2xl font-bold text-blue-700">
+                  {assignedTasks.filter(task => task.status !== 'completed').length}
+                </p>
+              </div>
+              <div className="p-4 bg-green-50 rounded-lg border border-green-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <Calendar className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-900">Completed Today</span>
+                </div>
+                <p className="text-2xl font-bold text-green-700">
+                  {assignedTasks.filter(task => 
+                    task.status === 'completed' && 
+                    new Date(task.updatedAt).toDateString() === new Date().toDateString()
+                  ).length}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Forward Task Modal */}
         <ForwardTaskModal
