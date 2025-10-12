@@ -260,9 +260,9 @@ export default function TLTM() {
                                             <Calendar className="h-8 w-8 mx-auto text-muted-foreground" />
                                             <div>
                                                 <p className="text-muted-foreground text-xs mb-2">No meetings scheduled</p>
-                                                <Button 
-                                                    onClick={() => setMeetingModalOpen(true)} 
-                                                    size="sm" 
+                                                <Button
+                                                    onClick={() => setMeetingModalOpen(true)}
+                                                    size="sm"
                                                     className="h-7 text-xs"
                                                 >
                                                     Create First Meeting
@@ -280,8 +280,8 @@ export default function TLTM() {
                                                                 <h4 className="font-medium text-xs leading-tight line-clamp-2 flex-1">
                                                                     {meeting.title}
                                                                 </h4>
-                                                                <Badge 
-                                                                    variant="outline" 
+                                                                <Badge
+                                                                    variant="outline"
                                                                     className={`
                                                                         flex-shrink-0 text-[10px] px-1.5 py-0 h-5
                                                                         ${getStatusColor(meeting.status)}
@@ -290,25 +290,25 @@ export default function TLTM() {
                                                                     {meeting.status}
                                                                 </Badge>
                                                             </div>
-                                                            
+
                                                             <p className="text-[10px] text-muted-foreground line-clamp-2 mb-1">
                                                                 {meeting.description}
                                                             </p>
                                                         </div>
-                                                        
+
                                                         <div className="flex gap-1 flex-shrink-0">
-                                                            <Button 
-                                                                variant="ghost" 
-                                                                size="sm" 
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
                                                                 className="h-6 px-1.5 text-[10px]"
                                                                 onClick={() => handleEditMeeting(meeting)}
                                                             >
                                                                 Edit
                                                             </Button>
                                                             {meeting.meetingLink && (
-                                                                <Button 
-                                                                    variant="default" 
-                                                                    size="sm" 
+                                                                <Button
+                                                                    variant="default"
+                                                                    size="sm"
                                                                     className="h-6 px-1.5 text-[10px] bg-blue-600 hover:bg-blue-700"
                                                                 >
                                                                     Join
@@ -318,13 +318,13 @@ export default function TLTM() {
                                                     </div>
 
                                                     {/* Details Section */}
-                                                    <div className="flex items-center justify-between text-[10px]">
+                                                    <div className="flex flex-col gap-3">
                                                         <div className="flex items-center gap-2 text-muted-foreground">
                                                             <div className="flex items-center gap-1">
                                                                 <Video className="h-3 w-3" />
                                                                 <span className="truncate max-w-[80px]">{meeting.platform}</span>
                                                             </div>
-                                                            
+
                                                             <div className="flex items-center gap-1">
                                                                 <Calendar className="h-3 w-3" />
                                                                 <span className="text-foreground font-medium">
@@ -337,25 +337,21 @@ export default function TLTM() {
                                                         </div>
 
                                                         {/* Participants */}
-                                                        <div className="flex items-center gap-1">
-                                                            <Users className="h-3 w-3 text-muted-foreground" />
-                                                            <div className="flex flex-wrap gap-1 justify-end max-w-[100px]">
-                                                                {meeting.participants.slice(0, 2).map((participant, index) => (
-                                                                    <Badge 
-                                                                        key={index} 
-                                                                        variant="outline" 
-                                                                        className="text-[8px] px-1 py-0 h-4"
+                                                        <div className="flex items-center gap-2">
+                                                            <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                                                            <div className="flex flex-wrap gap-1 ">
+                                                                {meeting.participants.map((participant, index) => (
+                                                                    <Badge
+                                                                        key={index}
+                                                                        variant="outline"
+                                                                        className="text-[10px] px-1.5 py-0 h-5"
                                                                     >
-                                                                        {participant.department.split('-').map(word => 
+                                                                        {participant.department.split('-').map(word =>
                                                                             word.charAt(0).toUpperCase() + word.slice(1)
                                                                         ).join(' ')}
                                                                     </Badge>
                                                                 ))}
-                                                                {meeting.participants.length > 2 && (
-                                                                    <Badge variant="outline" className="text-[8px] px-1 py-0 h-4">
-                                                                        +{meeting.participants.length - 2}
-                                                                    </Badge>
-                                                                )}
+
                                                             </div>
                                                         </div>
                                                     </div>
@@ -384,22 +380,21 @@ export default function TLTM() {
                                                 {/* Header with badges and button */}
                                                 <div className="flex items-start justify-between gap-2">
                                                     <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0">
-                                                        <Badge 
+                                                        <Badge
                                                             variant={
                                                                 task.priority === 'high' ? 'destructive' :
-                                                                task.priority === 'medium' ? 'secondary' : 'outline'
+                                                                    task.priority === 'medium' ? 'secondary' : 'outline'
                                                             }
                                                             className="text-xs h-5"
                                                         >
                                                             {task.priority}
                                                         </Badge>
-                                                        <Badge 
-                                                            variant="outline" 
-                                                            className={`text-xs h-5 ${
-                                                                task.status === 'pending' ? 'bg-gray-500 text-white' :
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={`text-xs h-5 ${task.status === 'pending' ? 'bg-gray-500 text-white' :
                                                                 task.status === 'in-progress' ? 'bg-blue-500 text-white' :
-                                                                task.status === 'completed' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-                                                            }`}
+                                                                    task.status === 'completed' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                                                                }`}
                                                         >
                                                             {task.status}
                                                         </Badge>
@@ -415,7 +410,7 @@ export default function TLTM() {
                                                 </div>
 
                                                 {/* Task Title and Description */}
-                                                <div className="space-y-1"  onClick={() => router.push(`/dashboard/teamleader/tasks-meetings/assigned-hr-task-detail/${task._id}`)}>
+                                                <div className="space-y-1" onClick={() => router.push(`/dashboard/teamleader/tasks-meetings/assigned-hr-task-detail/${task._id}`)}>
                                                     <h4 className="font-semibold text-sm leading-tight line-clamp-2" title={task.title}>
                                                         {task.title}
                                                     </h4>

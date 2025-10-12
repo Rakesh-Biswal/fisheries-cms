@@ -303,7 +303,7 @@ export default function HRTM() {
                     />
                     <Button onClick={() => setMeetingModalOpen(true)}>
                       <Plus className="h-4 w-4 mr-1" />
-                    New
+                      New
                     </Button>
                   </div>
 
@@ -363,7 +363,7 @@ export default function HRTM() {
                           </div>
 
                           {/* Details Section */}
-                          <div className="flex items-center justify-between">
+                          <div className="flex flex-col gap-3">
                             <div className="flex items-center gap-3 text-xs text-muted-foreground">
 
                               <div className="flex items-center gap-1.5">
@@ -387,8 +387,8 @@ export default function HRTM() {
                             {/* Participants */}
                             <div className="flex items-center gap-2">
                               <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                              <div className="flex flex-wrap gap-1 justify-end max-w-[120px]">
-                                {meeting.participants.slice(0, 2).map((participant, index) => (
+                              <div className="flex flex-wrap gap-1 ">
+                                {meeting.participants.map((participant, index) => (
                                   <Badge
                                     key={index}
                                     variant="outline"
@@ -399,11 +399,7 @@ export default function HRTM() {
                                     ).join(' ')}
                                   </Badge>
                                 ))}
-                                {meeting.participants.length > 2 && (
-                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
-                                    +{meeting.participants.length - 2}
-                                  </Badge>
-                                )}
+
                               </div>
                             </div>
                           </div>
