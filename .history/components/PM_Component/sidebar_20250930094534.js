@@ -61,7 +61,7 @@ const sidebarItems = [
   },
     {
     name: "Meeting section",
-    href: "/dashboard/projectmanager/metting",
+    href: "/dashboard/projectmanager/Meeting",
     icon: Truck,
   },
 ];

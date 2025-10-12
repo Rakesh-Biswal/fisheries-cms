@@ -59,11 +59,6 @@ const sidebarItems = [
     href: "/dashboard/projectmanager/suppliers",
     icon: Truck,
   },
-    {
-    name: "Meeting section",
-    href: "/dashboard/projectmanager/metting",
-    icon: Truck,
-  },
 ];
 
 const bottomItems = [
