@@ -2,9 +2,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { TrendingUp, Clock, CheckCircle, Users } from "lucide-react"
+import { TrendingUp, Clock, CheckCircle, Users, Calendar } from "lucide-react"
 
-export default function HrTaskStatsCards({ stats }) {
+export default function HrTaskStatsCards({ stats, meetingStats }) {
   const statItems = [
     {
       label: "Assigned Tasks",
@@ -28,11 +28,11 @@ export default function HrTaskStatsCards({ stats }) {
       description: "To team leaders"
     },
     {
-      label: "Completed Forwarded",
-      value: stats?.forwarded?.completedForwarded || 0,
-      icon: CheckCircle,
+      label: "Total Meetings",
+      value: meetingStats?.totalMeetings || 0,
+      icon: Calendar,
       color: "text-purple-600",
-      description: `${stats?.forwarded?.pendingForwarded || 0} pending`
+      description: `${meetingStats?.todayMeetings || 0} today`
     }
   ]
 
