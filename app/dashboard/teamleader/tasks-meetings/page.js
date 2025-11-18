@@ -29,22 +29,37 @@ export default function TLTM() {
     const [loading, setLoading] = useState({
         assigned: true,
         meetings: true,
-        stats: true
+        stats: true,
+        meetingStats: true
     })
     const [assignModalOpen, setAssignModalOpen] = useState(false)
     const [meetingModalOpen, setMeetingModalOpen] = useState(false)
     const [selectedTask, setSelectedTask] = useState(null)
     const [editingMeeting, setEditingMeeting] = useState(null)
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+    const [initialLoadComplete, setInitialLoadComplete] = useState(false)
     const router = useRouter()
 
-    const isLoading = loading.assigned || loading.meetings || loading.stats
+    const isLoading = !initialLoadComplete && (loading.assigned || loading.meetings || loading.stats || loading.meetingStats)
 
     useEffect(() => {
-        fetchAssignedTasks()
-        fetchMeetings()
-        fetchStats()
-        fetchMeetingStats()
+        const initializeData = async () => {
+            try {
+                await Promise.all([
+                    fetchAssignedTasks(),
+                    fetchMeetings(),
+                    fetchStats(),
+                    fetchMeetingStats()
+                ])
+            } catch (error) {
+                console.error('Error initializing data:', error)
+                toast.error('Failed to load initial data')
+            } finally {
+                setInitialLoadComplete(true)
+            }
+        }
+
+        initializeData()
     }, [])
 
     useEffect(() => {
@@ -69,6 +84,7 @@ export default function TLTM() {
         } catch (error) {
             console.error('Error fetching assigned tasks:', error)
             toast.error('Failed to load assigned tasks')
+            setAssignedTasks([])
         } finally {
             setLoading(prev => ({ ...prev, assigned: false }))
         }
@@ -90,6 +106,7 @@ export default function TLTM() {
         } catch (error) {
             console.error('Error fetching meetings:', error)
             toast.error('Failed to load meetings')
+            setMeetings([])
         } finally {
             setLoading(prev => ({ ...prev, meetings: false }))
         }
@@ -97,6 +114,7 @@ export default function TLTM() {
 
     const fetchStats = async () => {
         try {
+            setLoading(prev => ({ ...prev, stats: true }))
             const response = await fetch(`${API_URL}/api/tl/tasks-meetings/stats`, {
                 credentials: 'include'
             })
@@ -104,14 +122,20 @@ export default function TLTM() {
             if (response.ok) {
                 const data = await response.json()
                 setStats(data.data || {})
+            } else {
+                throw new Error('Failed to fetch stats')
             }
         } catch (error) {
             console.error('Error fetching stats:', error)
+            setStats({})
+        } finally {
+            setLoading(prev => ({ ...prev, stats: false }))
         }
     }
 
     const fetchMeetingStats = async () => {
         try {
+            setLoading(prev => ({ ...prev, meetingStats: true }))
             const response = await fetch(`${API_URL}/api/tl/meetings/stats`, {
                 credentials: 'include'
             })
@@ -119,9 +143,14 @@ export default function TLTM() {
             if (response.ok) {
                 const data = await response.json()
                 setMeetingStats(data.data || {})
+            } else {
+                throw new Error('Failed to fetch meeting stats')
             }
         } catch (error) {
             console.error('Error fetching meeting stats:', error)
+            setMeetingStats({})
+        } finally {
+            setLoading(prev => ({ ...prev, meetingStats: false }))
         }
     }
 
@@ -132,15 +161,18 @@ export default function TLTM() {
 
     const handleTaskAssigned = (newTask) => {
         fetchStats()
+        fetchAssignedTasks()
     }
 
     const handleTaskDeleted = (taskId) => {
         fetchStats()
+        fetchAssignedTasks()
     }
 
     const handleMeetingCreated = (newMeeting) => {
         setMeetings(prev => [newMeeting, ...prev])
         fetchMeetingStats()
+        fetchMeetings()
     }
 
     const handleMeetingUpdated = (updatedMeeting) => {
