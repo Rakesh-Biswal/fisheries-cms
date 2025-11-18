@@ -1,116 +1,76 @@
-"use client";
-
+// components/PM_Component/dashboard-stats.js
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, Calendar, DollarSign } from "lucide-react";
-import { dashboardData } from "@/lib/PM_Lib/data";
+import { Users, IndianRupee, FileCheck, AlertCircle, CheckCircle } from "lucide-react";
 
-export default function DashboardStats() {
-  const { currentHarvestValue, upcomingDeliveries, totalInputCosts } =
-    dashboardData;
+export default function DashboardStats({ data }) {
+  const stats = data || {
+    totalFarmers: 0,
+    totalPayments: 0,
+    completedSteps: 0,
+    pendingApprovals: 0,
+    activeProjects: 0,
+    totalRevenue: 0
+  };
+
+  const statCards = [
+    {
+      title: "Total Farmers",
+      value: stats.totalFarmers,
+      icon: Users,
+      color: "blue",
+      description: "Enrolled farmers"
+    },
+    {
+      title: "Active Projects",
+      value: stats.activeProjects,
+      icon: CheckCircle,
+      color: "green",
+      description: "Ongoing projects"
+    },
+    {
+      title: "Total Revenue",
+      value: `₹${stats.totalRevenue?.toLocaleString('en-IN') || 0}`,
+      icon: IndianRupee,
+      color: "emerald",
+      description: "Total payments"
+    },
+    {
+      title: "Pending Approvals",
+      value: stats.pendingApprovals,
+      icon: AlertCircle,
+      color: "orange",
+      description: "Need attention"
+    }
+  ];
+
+  const getColorClasses = (color) => {
+    const colors = {
+      blue: "bg-blue-100 text-blue-600",
+      green: "bg-green-100 text-green-600",
+      emerald: "bg-emerald-100 text-emerald-600",
+      orange: "bg-orange-100 text-orange-600",
+    };
+    return colors[color] || colors.blue;
+  };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-      {/* Current Harvest Value */}
-      <Card className="bg-white">
-        <CardContent className="p-4 lg:p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">
-              Current Harvest Value
-            </h3>
-            <DollarSign className="w-4 h-4 text-gray-400" />
-          </div>
-          <div className="space-y-2">
-            <div className="text-xl lg:text-2xl font-bold text-gray-900">
-              {currentHarvestValue.currency}
-              {currentHarvestValue.value.toLocaleString()}
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-green-500 h-2 rounded-full w-3/4"></div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {statCards.map((stat, index) => (
+        <Card key={index} className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className={`p-3 rounded-lg ${getColorClasses(stat.color)}`}>
+                <stat.icon className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{stat.value}</p>
+                <p className="text-sm font-medium text-gray-900">{stat.title}</p>
+                <p className="text-xs text-gray-600">{stat.description}</p>
               </div>
             </div>
-            <div className="text-xs lg:text-sm text-gray-600">
-              {currentHarvestValue.currency}
-              {currentHarvestValue.estimated.toLocaleString()} estimated this
-              month
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Upcoming Deliveries */}
-      <Card className="bg-white">
-        <CardContent className="p-4 lg:p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">
-              Upcoming Deliveries
-            </h3>
-            <Calendar className="w-4 h-4 text-gray-400" />
-          </div>
-          <div className="space-y-2">
-            <div className="text-xl lg:text-2xl font-bold text-gray-900">
-              {upcomingDeliveries.count}
-            </div>
-            <div className="flex items-center gap-1">
-              <TrendingUp className="w-4 h-4 text-green-500" />
-              <span className="text-xs lg:text-sm text-green-600">
-                {upcomingDeliveries.currency}
-                {upcomingDeliveries.value.toLocaleString()}
-              </span>
-            </div>
-            <div className="text-xs lg:text-sm text-gray-600">
-              {upcomingDeliveries.count} next {upcomingDeliveries.nextDays} days
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Another Upcoming Deliveries Card */}
-      <Card className="bg-white">
-        <CardContent className="p-4 lg:p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">
-              Upcoming Deliveries
-            </h3>
-            <Calendar className="w-4 h-4 text-gray-400" />
-          </div>
-          <div className="space-y-2">
-            <div className="text-xl lg:text-2xl font-bold text-gray-900">
-              {upcomingDeliveries.count}
-            </div>
-            <div className="text-xs lg:text-sm text-gray-600">
-              next {upcomingDeliveries.nextDays} days
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Total Input Costs */}
-      <Card className="bg-white">
-        <CardContent className="p-4 lg:p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">
-              Total Input Costs
-            </h3>
-            <TrendingUp className="w-4 h-4 text-gray-400" />
-          </div>
-          <div className="space-y-2">
-            <div className="text-xl lg:text-2xl font-bold text-gray-900">
-              {totalInputCosts.currency}
-              {totalInputCosts.value.toLocaleString()}
-            </div>
-            <div className="flex items-center gap-1">
-              <TrendingUp className="w-4 h-4 text-red-500" />
-              <span className="text-xs lg:text-sm text-red-600">
-                {totalInputCosts.percentage}%
-              </span>
-            </div>
-            <div className="text-xs lg:text-sm text-gray-600">
-              {totalInputCosts.period}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

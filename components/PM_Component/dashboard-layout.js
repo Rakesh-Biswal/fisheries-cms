@@ -1,74 +1,116 @@
+// components/PM_Component/dashboard-layout.js
 "use client";
 
 import { useState } from "react";
-import Sidebar from "./sidebar";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  Users,
+  IndianRupee,
+  BarChart3,
+  Home,
+  ChevronDown,
+  LogOut,
+  User
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Settings, Plus, Menu, Search } from "lucide-react";
 
 export default function DashboardLayout({ children, title = "Dashboard" }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
+
+  const navigation = [
+    { name: "Dashboard", href: "/dashboard/project-manager", icon: Home },
+    { name: "Farmers", href: "/dashboard/project-manager/farmers", icon: Users },
+    { name: "Payments", href: "/dashboard/project-manager/payments", icon: IndianRupee },
+    { name: "Reports", href: "/dashboard/project-manager/reports", icon: BarChart3 },
+  ];
+
+  const isActive = (href) => {
+    return pathname === href || pathname.startsWith(href + "/");
+  };
 
   return (
     <div className="flex h-screen bg-gray-50">
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static lg:inset-0 transition duration-200 ease-in-out`}>
+        <div className="flex items-center justify-between h-16 px-4 border-b">
+          <h1 className="text-xl font-bold text-gray-800">Fisheries PM</h1>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden"
+          >
+            ×
+          </Button>
+        </div>
+
+        <nav className="mt-8 px-4">
+          <ul className="space-y-2">
+            {navigation.map((item) => {
+              const Icon = item.icon;
+              return (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${isActive(item.href)
+                        ? "bg-blue-50 text-blue-700 border border-blue-200"
+                        : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                  >
+                    <Icon className="w-5 h-5 mr-3" />
+                    {item.name}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </div>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b">
+          <div className="flex items-center justify-between h-16 px-6">
+            <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden"
+              >
+                ☰
+              </Button>
+              <h1 className="ml-2 text-xl font-semibold text-gray-800">{title}</h1>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-sm font-medium">Project Manager</span>
+                <ChevronDown className="w-4 h-4 text-gray-400" />
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Page content */}
+        <main className="flex-1 overflow-auto p-6">
+          {children}
+        </main>
+      </div>
+
+      {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
-
-      <div
-        className={`
-        fixed lg:static inset-y-0 left-0 z-50 lg:z-auto
-        transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
-        lg:translate-x-0 transition-transform duration-300 ease-in-out
-      `}
-      >
-        <Sidebar onClose={() => setSidebarOpen(false)} />
-      </div>
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="lg:hidden"
-                onClick={() => setSidebarOpen(true)}
-              >
-                <Menu className="w-5 h-5" />
-              </Button>
-              <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
-
-              <div className="relative hidden md:block">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search"
-                  className="pl-10 w-64 bg-gray-50 border-gray-200"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" className="bg-transparent">
-                <Settings className="w-4 h-4 mr-2" />
-                Customize
-              </Button>
-              <Button
-                size="sm"
-                className="bg-black text-white hover:bg-gray-800"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Record
-              </Button>
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 overflow-auto p-6">{children}</main>
-      </div>
     </div>
   );
 }
