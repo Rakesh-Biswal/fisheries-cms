@@ -137,4 +137,13 @@
   body[data-scroll-locked] {
     overflow: hidden !important;
   }
+
+  .dropdown-content {
+    z-index: 1000 !important;
+  }
+  
+  /* Prevent body scroll when dropdown is open */
+  .dropdown-open {
+    overflow: hidden;
+  }
 }

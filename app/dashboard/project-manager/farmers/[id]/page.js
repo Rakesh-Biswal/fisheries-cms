@@ -9,7 +9,30 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileCheck, FileX, MapPin, User, LandPlot, IndianRupee, ArrowLeft, Phone, Mail, Calendar, RefreshCw, AlertCircle } from "lucide-react";
+import {
+    FileCheck,
+    FileX,
+    MapPin,
+    User,
+    LandPlot,
+    IndianRupee,
+    ArrowLeft,
+    Phone,
+    Mail,
+    Calendar,
+    RefreshCw,
+    AlertCircle,
+    MoreVertical,
+    CheckCircle,
+    Edit,
+    X
+} from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -20,6 +43,25 @@ export default function FarmerDetailsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showPaymentForm, setShowPaymentForm] = useState(false);
+    const [updatingStatus, setUpdatingStatus] = useState(false);
+    const [editMode, setEditMode] = useState(false);
+    const [showDropdown, setShowDropdown] = useState(false);
+
+    useEffect(() => {
+        const handleClickOutside = () => {
+            setShowDropdown(false);
+        };
+
+        // Add event listener when dropdown is open
+        if (showDropdown) {
+            document.addEventListener('click', handleClickOutside);
+        }
+
+        // Cleanup
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, [showDropdown]);
 
     // Debug: Log the params to see what's being received
     useEffect(() => {
@@ -58,6 +100,8 @@ export default function FarmerDetailsPage() {
 
             if (result.success) {
                 setFarmerData(result.data);
+                // Reset edit mode when data is refreshed
+                setEditMode(false);
             } else {
                 throw new Error(result.message || "Failed to fetch farmer details");
             }
@@ -66,6 +110,73 @@ export default function FarmerDetailsPage() {
             setError(err.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const updateDocumentStatus = async (newStatus) => {
+        try {
+            setUpdatingStatus(true);
+
+            const response = await fetch(`${API_URL}/api/project-manager/farmers/${params.id}/step2-status`, {
+                method: 'PATCH',
+                credentials: "include",
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    documentStatus: newStatus
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Update local state
+                setFarmerData(prev => ({
+                    ...prev,
+                    step2Data: {
+                        ...prev.step2Data,
+                        documentStatus: newStatus
+                    },
+                    stepCompletion: {
+                        ...prev.stepCompletion,
+                        step2: newStatus === "Approved",
+                        canMakePayment: prev.stepCompletion.step1 && newStatus === "Approved"
+                    }
+                }));
+
+                // If status is no longer "Pending", exit edit mode
+                if (newStatus !== "Pending") {
+                    setEditMode(false);
+                }
+            } else {
+                throw new Error(result.message || "Failed to update status");
+            }
+        } catch (err) {
+            console.error("Error updating document status:", err);
+            alert("Failed to update document status: " + err.message);
+        } finally {
+            setUpdatingStatus(false);
+        }
+    };
+
+    const getStatusBadgeVariant = (status) => {
+        switch (status) {
+            case "Approved":
+                return "default";
+            case "Rejected":
+                return "destructive";
+            case "Under Review":
+                return "secondary";
+            case "Needs Correction":
+                return "outline";
+            case "Pending":
+            default:
+                return "secondary";
         }
     };
 
@@ -114,6 +225,7 @@ export default function FarmerDetailsPage() {
     }
 
     const { farmer, step2Data, payments, stepCompletion } = farmerData;
+    const isStep2Pending = step2Data?.documentStatus === "Pending";
 
     return (
         <DashboardLayout>
@@ -179,14 +291,113 @@ export default function FarmerDetailsPage() {
                                         <div className={`p-2 rounded-full ${stepCompletion.step2 ? 'bg-green-500 text-white' : 'bg-gray-300'}`}>
                                             <FileCheck className="w-5 h-5" />
                                         </div>
-                                        <div>
-                                            <h3 className="font-semibold">Step 2: Land Verification</h3>
-                                            <p className="text-sm text-muted-foreground">
-                                                Document verification and land approval
-                                            </p>
-                                            <Badge variant={stepCompletion.step2 ? "default" : "secondary"} className="mt-2">
-                                                {stepCompletion.step2 ? "Completed" : step2Data ? step2Data.documentStatus : "Not Started"}
-                                            </Badge>
+                                        <div className="flex-1">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <h3 className="font-semibold">Step 2: Land Verification</h3>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Document verification and land approval
+                                                    </p>
+                                                    <Badge variant={getStatusBadgeVariant(step2Data?.documentStatus)} className="mt-2">
+                                                        {step2Data ? step2Data.documentStatus : "Not Started"}
+                                                    </Badge>
+                                                </div>
+
+
+
+                                                {/* Status Update Buttons */}
+                                                {step2Data && (
+                                                    <div className="flex gap-2 ml-4">
+                                                        {editMode || isStep2Pending ? (
+                                                            <>
+                                                                <Button
+                                                                    size="sm"
+                                                                    onClick={() => updateDocumentStatus("Approved")}
+                                                                    disabled={updatingStatus}
+                                                                    className="bg-green-600 hover:bg-green-700"
+                                                                >
+                                                                    <CheckCircle className="w-4 h-4 mr-1" />
+                                                                    Approve
+                                                                </Button>
+
+                                                                {/* Custom Dropdown */}
+                                                                <div className="relative">
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        disabled={updatingStatus}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setShowDropdown(!showDropdown);
+                                                                        }}
+                                                                        className="flex items-center gap-1"
+                                                                    >
+                                                                        <MoreVertical className="w-4 h-4" />
+                                                                    </Button>
+
+                                                                    {showDropdown && (
+                                                                        <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                                                                            <button
+                                                                                className="w-full text-left px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    updateDocumentStatus("Under Review");
+                                                                                    setShowDropdown(false);
+                                                                                }}
+                                                                            >
+                                                                                Under Review
+                                                                            </button>
+                                                                            <button
+                                                                                className="w-full text-left px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    updateDocumentStatus("Needs Correction");
+                                                                                    setShowDropdown(false);
+                                                                                }}
+                                                                            >
+                                                                                Needs Correction
+                                                                            </button>
+                                                                            <button
+                                                                                className="w-full text-left px-4 py-2 hover:bg-gray-100 cursor-pointer text-red-600 hover:text-red-700"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    updateDocumentStatus("Rejected");
+                                                                                    setShowDropdown(false);
+                                                                                }}
+                                                                            >
+                                                                                Reject
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() => setEditMode(true)}
+                                                            >
+                                                                <Edit className="w-4 h-4 mr-1" />
+                                                                Edit Status
+                                                            </Button>
+                                                        )}
+
+                                                        {editMode && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                onClick={() => {
+                                                                    setEditMode(false);
+                                                                    setShowDropdown(false);
+                                                                }}
+                                                                disabled={updatingStatus}
+                                                            >
+                                                                <X className="w-4 h-4" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -194,6 +405,7 @@ export default function FarmerDetailsPage() {
                         </CardContent>
                     </Card>
 
+                    {/* Rest of the component remains the same */}
                     <Tabs defaultValue="personal" className="space-y-6">
                         <TabsList className="grid w-full grid-cols-3">
                             <TabsTrigger value="personal">
@@ -298,7 +510,9 @@ export default function FarmerDetailsPage() {
                                     <CardHeader>
                                         <CardTitle>Land & Document Details</CardTitle>
                                         <CardDescription>
-                                            Status: <Badge variant="outline">{step2Data.documentStatus}</Badge>
+                                            Status: <Badge variant={getStatusBadgeVariant(step2Data.documentStatus)}>
+                                                {step2Data.documentStatus}
+                                            </Badge>
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
@@ -422,7 +636,11 @@ export default function FarmerDetailsPage() {
                                                                 </p>
                                                             )}
                                                         </div>
-                                                        <Button variant="outline" size="sm">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => router.push(`/dashboard/project-manager/farmers/${params.id}/payment/${payment._id}`)}
+                                                        >
                                                             View Details
                                                         </Button>
                                                     </div>
