@@ -20,15 +20,10 @@ import {
     FileText,
     Building,
     Edit,
-    MoreVertical
+    ChevronDown,
+    ChevronUp,
+    AlertTriangle
 } from "lucide-react";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import Image from "next/image";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -40,21 +35,7 @@ export default function PaymentDetailsPage() {
     const [error, setError] = useState(null);
     const [updatingStatus, setUpdatingStatus] = useState(false);
     const [showPaymentForm, setShowPaymentForm] = useState(false);
-    const [showDropdown, setShowDropdown] = useState(false);
-
-    useEffect(() => {
-        const handleClickOutside = () => {
-            setShowDropdown(false);
-        };
-
-        if (showDropdown) {
-            document.addEventListener('click', handleClickOutside);
-        }
-
-        return () => {
-            document.removeEventListener('click', handleClickOutside);
-        };
-    }, [showDropdown]);
+    const [showPaymentDetails, setShowPaymentDetails] = useState(false);
 
     useEffect(() => {
         if (params.paymentId) {
@@ -116,7 +97,6 @@ export default function PaymentDetailsPage() {
 
             if (result.success) {
                 setPayment(result.data);
-                setShowDropdown(false);
             } else {
                 throw new Error(result.message || "Failed to update payment status");
             }
@@ -194,7 +174,7 @@ export default function PaymentDetailsPage() {
 
     const showPaymentMethods = payment.paymentStatus === "Pending" && payment.paymentSubmissions.length === 0;
     const showVerificationButtons = payment.paymentStatus === "Processing" && payment.paymentSubmissions.length > 0;
-    const showEditButton = ["Completed", "Failed", "Cancelled"].includes(payment.paymentStatus);
+    const hasSubmissions = payment.paymentSubmissions && payment.paymentSubmissions.length > 0;
 
     return (
         <DashboardLayout>
@@ -208,134 +188,94 @@ export default function PaymentDetailsPage() {
                                 Back to Farmer
                             </Button>
                             <div>
-                                <h1 className="text-2xl md:text-3xl font-bold">{payment.paymentTitle}</h1>
+                                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{payment.paymentTitle}</h1>
                                 <p className="text-muted-foreground">Payment ID: {payment._id}</p>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-3">
-                            <Badge variant={getStatusBadgeVariant(payment.paymentStatus)} className="flex items-center gap-1">
+                            <Badge variant={getStatusBadgeVariant(payment.paymentStatus)} className="flex items-center gap-1 text-sm px-3 py-1">
                                 {getStatusIcon(payment.paymentStatus)}
                                 {payment.paymentStatus}
                             </Badge>
-
-                            {/* Show Update Status button only for Processing status */}
-                            {payment.paymentStatus === "Processing" && (
-                                <div className="flex gap-2">
-                                    <Button
-                                        onClick={() => updatePaymentStatus("Completed")}
-                                        disabled={updatingStatus}
-                                        className="bg-green-600 hover:bg-green-700"
-                                    >
-                                        <CheckCircle className="w-4 h-4 mr-1" />
-                                        Approve Payment
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => updatePaymentStatus("Cancelled")}
-                                        disabled={updatingStatus}
-                                    >
-                                        <XCircle className="w-4 h-4 mr-1" />
-                                        Cancel Payment
-                                    </Button>
-                                </div>
-                            )}
 
                             {/* Show Submit Payment button for Pending status */}
                             {payment.paymentStatus === "Pending" && (
                                 <Button
                                     onClick={() => setShowPaymentForm(true)}
-                                    className="bg-blue-600 hover:bg-blue-700"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white"
                                 >
                                     <Upload className="w-4 h-4 mr-1" />
-                                    Submit Payment Proof
+                                    Submit Payment
                                 </Button>
-                            )}
-
-                            {/* Show Edit button for Completed, Failed, Cancelled status */}
-                            {showEditButton && (
-                                <div className="relative">
-                                    <Button
-                                        variant="outline"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setShowDropdown(!showDropdown);
-                                        }}
-                                        disabled={updatingStatus}
-                                        className="flex items-center gap-1"
-                                    >
-                                        <Edit className="w-4 h-4 mr-1" />
-                                        Edit Status
-                                    </Button>
-
-                                    {showDropdown && (
-                                        <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-                                            <button
-                                                className="w-full text-left px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    updatePaymentStatus("Completed");
-                                                }}
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <CheckCircle className="w-4 h-4 text-green-600" />
-                                                    <span>Mark as Completed</span>
-                                                </div>
-                                            </button>
-                                            <button
-                                                className="w-full text-left px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    updatePaymentStatus("Processing");
-                                                }}
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <Clock className="w-4 h-4 text-blue-600" />
-                                                    <span>Mark as Processing</span>
-                                                </div>
-                                            </button>
-                                            <button
-                                                className="w-full text-left px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    updatePaymentStatus("Pending");
-                                                }}
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <Clock className="w-4 h-4 text-gray-600" />
-                                                    <span>Mark as Pending</span>
-                                                </div>
-                                            </button>
-                                            <button
-                                                className="w-full text-left px-4 py-2 hover:bg-gray-100 cursor-pointer text-red-600 hover:text-red-700"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    updatePaymentStatus("Failed");
-                                                }}
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <XCircle className="w-4 h-4" />
-                                                    <span>Mark as Failed</span>
-                                                </div>
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
                             )}
                         </div>
                     </div>
 
-                    {/* Rest of the component remains exactly the same */}
+                    {/* Alert for pending verification */}
+                    {showVerificationButtons && (
+                        <Card className="border-yellow-200 bg-yellow-50">
+                            <CardContent className="p-4">
+                                <div className="flex items-center gap-3">
+                                    <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                                    <div className="flex-1">
+                                        <h4 className="font-semibold text-yellow-800">Payment Verification Required</h4>
+                                        <p className="text-yellow-700 text-sm">
+                                            Payment proof has been submitted and is awaiting your verification.
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            onClick={() => updatePaymentStatus("Completed")}
+                                            disabled={updatingStatus}
+                                            className="bg-green-600 hover:bg-green-700 text-white"
+                                        >
+                                            <CheckCircle className="w-4 h-4 mr-1" />
+                                            Approve
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => updatePaymentStatus("Cancelled")}
+                                            disabled={updatingStatus}
+                                            className="border-red-300 text-red-700 hover:bg-red-50"
+                                        >
+                                            <XCircle className="w-4 h-4 mr-1" />
+                                            Reject
+                                        </Button>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Payment Information */}
                         <div className="lg:col-span-2 space-y-6">
+                            {/* Payment Details Card - Minimized by default */}
                             <Card>
-                                <CardHeader className="flex flex-row items-center gap-2">
-                                    <FileText className="w-5 h-5 text-blue-600" />
-                                    <CardTitle>Payment Details</CardTitle>
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="flex items-center gap-2 text-lg">
+                                            <FileText className="w-5 h-5 text-blue-600" />
+                                            Payment Details
+                                        </CardTitle>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setShowPaymentDetails(!showPaymentDetails)}
+                                            className="text-gray-500 hover:text-gray-700"
+                                        >
+                                            {showPaymentDetails ? (
+                                                <ChevronUp className="w-4 h-4" />
+                                            ) : (
+                                                <ChevronDown className="w-4 h-4" />
+                                            )}
+                                            {showPaymentDetails ? "Hide" : "Show"} Details
+                                        </Button>
+                                    </div>
                                 </CardHeader>
-                                <CardContent className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <CardContent className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <div className="flex items-center gap-2">
                                                 <IndianRupee className="w-4 h-4 text-green-600" />
@@ -376,7 +316,6 @@ export default function PaymentDetailsPage() {
                                             </div>
                                         </div>
 
-                                        {/* Only show Created By if data exists */}
                                         {payment.projectManagerId?.name && (
                                             <div className="space-y-2">
                                                 <div className="flex items-center gap-2">
@@ -390,83 +329,102 @@ export default function PaymentDetailsPage() {
                                         )}
                                     </div>
 
-                                    <div className="space-y-3 pt-4 border-t">
-                                        <div>
-                                            <p className="font-medium text-sm text-muted-foreground mb-1">Description</p>
-                                            <p className="text-sm bg-gray-50 p-3 rounded-lg border">{payment.description}</p>
-                                        </div>
-
-                                        <div>
-                                            <p className="font-medium text-sm text-muted-foreground mb-1">Reason for Payment</p>
-                                            <p className="text-sm bg-gray-50 p-3 rounded-lg border">{payment.reasonForPayment}</p>
-                                        </div>
-                                    </div>
-
-                                    {payment.requirements && payment.requirements.length > 0 && (
-                                        <div className="pt-4 border-t">
-                                            <p className="font-medium text-sm text-muted-foreground mb-3">Requirements</p>
-                                            <div className="space-y-2">
-                                                {payment.requirements.map((req, index) => (
-                                                    <div key={index} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
-                                                        <div className={`w-3 h-3 rounded-full ${req.isCompleted ? 'bg-green-500' : 'bg-gray-300'}`} />
-                                                        <span className="text-sm flex-1">{req.description}</span>
-                                                        {req.isCompleted && (
-                                                            <CheckCircle className="w-4 h-4 text-green-500" />
-                                                        )}
-                                                    </div>
-                                                ))}
+                                    {/* Expandable Details */}
+                                    {showPaymentDetails && (
+                                        <div className="space-y-4 pt-4 border-t border-gray-200">
+                                            <div>
+                                                <p className="font-medium text-sm text-muted-foreground mb-2">Description</p>
+                                                <p className="text-sm bg-gray-50 p-3 rounded-lg border text-gray-700">
+                                                    {payment.description}
+                                                </p>
                                             </div>
+
+                                            <div>
+                                                <p className="font-medium text-sm text-muted-foreground mb-2">Reason for Payment</p>
+                                                <p className="text-sm bg-gray-50 p-3 rounded-lg border text-gray-700">
+                                                    {payment.reasonForPayment}
+                                                </p>
+                                            </div>
+
+                                            {payment.requirements && payment.requirements.length > 0 && (
+                                                <div>
+                                                    <p className="font-medium text-sm text-muted-foreground mb-3">Requirements</p>
+                                                    <div className="space-y-2">
+                                                        {payment.requirements.map((req, index) => (
+                                                            <div key={index} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg border">
+                                                                <div className={`w-2 h-2 rounded-full ${req.isCompleted ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                                                <span className="text-sm text-gray-700 flex-1">{req.description}</span>
+                                                                {req.isCompleted && (
+                                                                    <CheckCircle className="w-4 h-4 text-green-500" />
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </CardContent>
                             </Card>
 
-                            {/* Payment Submissions */}
-                            {payment.paymentSubmissions && payment.paymentSubmissions.length > 0 && (
+                            {/* Payment Submissions - Compact Design */}
+                            {hasSubmissions && (
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle>Payment Submissions</CardTitle>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <Upload className="w-5 h-5 text-green-600" />
+                                            Submitted Payment Documents
+                                            <Badge variant="secondary" className="ml-2">
+                                                {payment.paymentSubmissions.length}
+                                            </Badge>
+                                        </CardTitle>
                                         <CardDescription>
-                                            Payment proof submitted by team members
+                                            Review the submitted payment proofs for verification
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="space-y-4">
                                             {payment.paymentSubmissions.map((submission, index) => (
-                                                <div key={index} className="border rounded-lg p-4 bg-white">
-                                                    <div className="flex items-start justify-between mb-4">
+                                                <div key={index} className="border border-gray-200 rounded-lg p-4 bg-white hover:bg-gray-50 transition-colors">
+                                                    <div className="flex items-start justify-between mb-3">
                                                         <div className="space-y-1">
-                                                            <p className="font-medium flex items-center gap-2">
-                                                                <User className="w-4 h-4" />
-                                                                {submission.submittedBy?.name || 'Unknown User'}
-                                                            </p>
+                                                            <div className="flex items-center gap-2">
+                                                                <User className="w-4 h-4 text-gray-500" />
+                                                                <p className="font-medium text-gray-900">
+                                                                    {submission.submittedBy?.name || 'Unknown User'}
+                                                                </p>
+                                                                <Badge variant="outline" className="text-xs">
+                                                                    {submission.paymentMethod}
+                                                                </Badge>
+                                                            </div>
                                                             <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                                                                <span>Role: {submission.submittedBy?.role || submission.submittedByModel}</span>
-                                                                <span>•</span>
-                                                                <span>Date: {new Date(submission.submittedAt).toLocaleString('en-IN')}</span>
+                                                                <span>Submitted: {new Date(submission.submittedAt).toLocaleString('en-IN')}</span>
+                                                                {submission.transactionId && (
+                                                                    <>
+                                                                        <span>•</span>
+                                                                        <span>Transaction ID: {submission.transactionId}</span>
+                                                                    </>
+                                                                )}
                                                             </div>
                                                         </div>
-                                                        <Badge variant="outline">{submission.paymentMethod}</Badge>
                                                     </div>
 
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        <div>
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                        <div className="md:col-span-1">
                                                             <p className="font-medium text-sm text-muted-foreground mb-2">
                                                                 Payment Screenshot
                                                             </p>
-                                                            <div className="border rounded-lg p-3 bg-gray-50">
-                                                                <Image
+                                                            <div className="border rounded-lg p-2 bg-gray-50">
+                                                                <img
                                                                     src={submission.screenshot}
                                                                     alt="Payment Screenshot"
-                                                                    width={300}
-                                                                    height={200}
-                                                                    className="rounded-md object-cover cursor-pointer w-full"
+                                                                    className="rounded-md object-cover w-full h-32 cursor-pointer hover:opacity-90 transition-opacity"
                                                                     onClick={() => window.open(submission.screenshot, '_blank')}
                                                                 />
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="sm"
-                                                                    className="w-full mt-2"
+                                                                    className="w-full mt-2 text-xs"
                                                                     onClick={() => window.open(submission.screenshot, '_blank')}
                                                                 >
                                                                     View Full Size
@@ -474,23 +432,13 @@ export default function PaymentDetailsPage() {
                                                             </div>
                                                         </div>
 
-                                                        <div className="space-y-3">
-                                                            {submission.transactionId && (
-                                                                <div>
-                                                                    <p className="font-medium text-sm text-muted-foreground">
-                                                                        Transaction ID
-                                                                    </p>
-                                                                    <p className="text-sm font-mono bg-gray-100 p-2 rounded border">
-                                                                        {submission.transactionId}
-                                                                    </p>
-                                                                </div>
-                                                            )}
+                                                        <div className="md:col-span-2 space-y-2">
                                                             {submission.additionalNotes && (
                                                                 <div>
                                                                     <p className="font-medium text-sm text-muted-foreground">
                                                                         Additional Notes
                                                                     </p>
-                                                                    <p className="text-sm bg-gray-100 p-2 rounded border">
+                                                                    <p className="text-sm bg-gray-100 p-2 rounded border text-gray-700">
                                                                         {submission.additionalNotes}
                                                                     </p>
                                                                 </div>
@@ -516,9 +464,9 @@ export default function PaymentDetailsPage() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="space-y-4">
+                                    <div className="space-y-3">
                                         <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                                            <span className="text-sm font-medium">Current Status</span>
+                                            <span className="text-sm font-medium">Payment Status</span>
                                             <Badge variant={getStatusBadgeVariant(payment.paymentStatus)}>
                                                 {payment.paymentStatus}
                                             </Badge>
@@ -545,121 +493,99 @@ export default function PaymentDetailsPage() {
                                 </CardContent>
                             </Card>
 
-                            {/* UPI Payment Methods - Only show for Pending status with no submissions */}
+                            {/* Single Payment Method */}
                             {showPaymentMethods && payment.paymentInfo?.upiIds && payment.paymentInfo.upiIds.length > 0 && (
                                 <Card>
                                     <CardHeader>
                                         <CardTitle className="text-lg flex items-center gap-2">
                                             <IndianRupee className="w-5 h-5" />
-                                            Company Payment Methods
+                                            Company Payment Method
                                         </CardTitle>
                                         <CardDescription>
-                                            Use these company-approved payment methods
+                                            Use this company-approved payment method
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="space-y-4">
                                             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
                                                 <p className="text-sm font-medium text-blue-800 text-center">
-                                                    💡 Only use company-approved payment methods
+                                                    💡 Use only company-approved payment method
                                                 </p>
                                             </div>
-                                            {payment.paymentInfo.upiIds.map((upi, index) => (
-                                                <div key={index} className="p-4 border border-green-200 rounded-lg bg-green-50">
-                                                    <p className="font-medium text-green-800 text-sm">{upi.provider}</p>
-                                                    <p className="text-lg font-bold text-green-600 break-all my-2 text-center">
+                                            
+                                            {/* Show only the first payment method */}
+                                            {payment.paymentInfo.upiIds.slice(0, 1).map((upi, index) => (
+                                                <div key={index} className="p-4 border border-green-200 rounded-lg bg-green-50 text-center">
+                                                    <p className="font-medium text-green-800 text-sm mb-2">{upi.provider}</p>
+                                                    <p className="text-lg font-bold text-green-600 break-all my-2">
                                                         {upi.upiId}
                                                     </p>
                                                     {upi.qrCode && (
-                                                        <div className="mt-3 text-center">
+                                                        <div className="mt-3">
                                                             <p className="text-sm text-muted-foreground mb-2">Scan QR Code</p>
-                                                            <Image
+                                                            <img
                                                                 src={upi.qrCode}
                                                                 alt="QR Code"
-                                                                width={120}
-                                                                height={120}
-                                                                className="mx-auto border-2 border-green-300 rounded-lg"
+                                                                className="mx-auto border-2 border-green-300 rounded-lg w-32 h-32 object-contain"
                                                             />
                                                         </div>
                                                     )}
                                                 </div>
                                             ))}
-
-                                            {/* Bank Details */}
-                                            {payment.paymentInfo.bankDetails && (
-                                                <div className="p-4 border border-blue-200 rounded-lg bg-blue-50">
-                                                    <p className="font-medium text-blue-800 mb-3 text-sm">Bank Transfer Details</p>
-                                                    <div className="space-y-2 text-xs">
-                                                        <div className="flex justify-between">
-                                                            <span className="font-medium">Account Name:</span>
-                                                            <span>{payment.paymentInfo.bankDetails.accountName}</span>
-                                                        </div>
-                                                        <div className="flex justify-between">
-                                                            <span className="font-medium">Account Number:</span>
-                                                            <span>{payment.paymentInfo.bankDetails.accountNumber}</span>
-                                                        </div>
-                                                        <div className="flex justify-between">
-                                                            <span className="font-medium">Bank:</span>
-                                                            <span>{payment.paymentInfo.bankDetails.bankName}</span>
-                                                        </div>
-                                                        <div className="flex justify-between">
-                                                            <span className="font-medium">IFSC:</span>
-                                                            <span>{payment.paymentInfo.bankDetails.ifscCode}</span>
-                                                        </div>
-                                                        <div className="flex justify-between">
-                                                            <span className="font-medium">Branch:</span>
-                                                            <span>{payment.paymentInfo.bankDetails.branch}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
                                         </div>
                                     </CardContent>
                                 </Card>
                             )}
 
-                            {/* Payment Verification Section - Show for Processing status */}
-                            {showVerificationButtons && (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-lg flex items-center gap-2">
-                                            <CheckCircle className="w-5 h-5" />
-                                            Payment Verification
-                                        </CardTitle>
-                                        <CardDescription>
-                                            Review the submitted payment proof
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-4">
-                                            <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                                                <p className="text-sm font-medium text-yellow-800 text-center">
-                                                    ⚠️ Payment proof submitted for verification
-                                                </p>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    onClick={() => updatePaymentStatus("Completed")}
-                                                    disabled={updatingStatus}
-                                                    className="bg-green-600 hover:bg-green-700 flex-1"
-                                                >
-                                                    <CheckCircle className="w-4 h-4 mr-1" />
-                                                    Approve
-                                                </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    onClick={() => updatePaymentStatus("Cancelled")}
-                                                    disabled={updatingStatus}
-                                                    className="flex-1"
-                                                >
-                                                    <XCircle className="w-4 h-4 mr-1" />
-                                                    Reject
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )}
+                            {/* Status Management */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-lg">Status Management</CardTitle>
+                                    <CardDescription>
+                                        Update payment status as needed
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-2">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => updatePaymentStatus("Completed")}
+                                            disabled={updatingStatus}
+                                            className="w-full justify-start text-green-700 border-green-200 hover:bg-green-50"
+                                        >
+                                            <CheckCircle className="w-4 h-4 mr-2" />
+                                            Mark as Completed
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => updatePaymentStatus("Processing")}
+                                            disabled={updatingStatus}
+                                            className="w-full justify-start text-blue-700 border-blue-200 hover:bg-blue-50"
+                                        >
+                                            <Clock className="w-4 h-4 mr-2" />
+                                            Mark as Processing
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => updatePaymentStatus("Pending")}
+                                            disabled={updatingStatus}
+                                            className="w-full justify-start text-gray-700 border-gray-200 hover:bg-gray-50"
+                                        >
+                                            <Clock className="w-4 h-4 mr-2" />
+                                            Mark as Pending
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => updatePaymentStatus("Failed")}
+                                            disabled={updatingStatus}
+                                            className="w-full justify-start text-red-700 border-red-200 hover:bg-red-50"
+                                        >
+                                            <XCircle className="w-4 h-4 mr-2" />
+                                            Mark as Failed
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
 
                             {/* Verification Notes */}
                             {payment.verificationNotes && (
@@ -668,7 +594,9 @@ export default function PaymentDetailsPage() {
                                         <CardTitle className="text-lg">Verification Notes</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <p className="text-sm bg-gray-50 p-3 rounded border">{payment.verificationNotes}</p>
+                                        <p className="text-sm bg-gray-50 p-3 rounded border text-gray-700">
+                                            {payment.verificationNotes}
+                                        </p>
                                     </CardContent>
                                 </Card>
                             )}

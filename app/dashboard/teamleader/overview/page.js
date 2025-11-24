@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { MoreHorizontal, TrendingUp, Users, Target, Calendar, Filter, Download, MapPin, Clock } from "lucide-react"
 import DashboardLayout from "@/components/TL_Component/dashboard-layout"
-import WorkModeTracker from "@/components/WorkModeTracker"
+import WorkModeTracker from "@/components/TL_Component/WorkModeTracker"
 
 // Sample team data for team leader dashboard
 const initialTeamData = [

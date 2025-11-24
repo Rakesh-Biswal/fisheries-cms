@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Users, RefreshCw, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import WorkModeTracker from "@/components/PM_Component/WorkModeTracker"
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function ProjectManagerDashboard() {
@@ -20,6 +22,7 @@ export default function ProjectManagerDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const router = useRouter();
+  const projectManagerId = 123; // Replace with actual team leader ID logic
 
   useEffect(() => {
     fetchDashboardData();
@@ -98,6 +101,7 @@ export default function ProjectManagerDashboard() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        <WorkModeTracker employeeId={projectManagerId} />
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>

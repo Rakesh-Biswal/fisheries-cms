@@ -142,7 +142,7 @@ export default function FarmersPage() {
                 </div>
 
                 {/* Search and Filter */}
-                <Card>
+                <Card className="bg-white">
                     <CardHeader>
                         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                             <CardTitle>All Farmers</CardTitle>
