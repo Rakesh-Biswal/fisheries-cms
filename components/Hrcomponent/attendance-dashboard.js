@@ -1,8 +1,8 @@
-// components/Hrcomponent/attendance-dashboard.js - COMPLETE WITH DETAILED MODAL
+// components/Hrcomponent/attendance-dashboard.js
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { format, parseISO, startOfDay } from 'date-fns';
+import { format, isFuture } from 'date-fns';
 import {
     Card,
     CardContent,
@@ -61,13 +61,19 @@ import {
     Building,
     User,
     CalendarDays,
-    Navigation as NavIcon,
     CheckSquare,
     XCircle,
-    Eye
+    Eye,
+    CalendarOff
 } from 'lucide-react';
 
+// Import Components
+import SummaryCards from './attendance-components/SummaryCards';
+import HolidayBanner from './attendance-components/HolidayBanner';
+import AttendanceDetailsModal from './attendance-components/AttendanceDetailsModal';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 
 const AttendanceDashboard = () => {
     const [attendanceData, setAttendanceData] = useState([]);
@@ -102,8 +108,30 @@ const AttendanceDashboard = () => {
         'Present', 'Half Day', 'Leave', 'Absent', 'Late Arrival', 'Early Leave', 'Approved', 'Rejected'
     ];
 
+    // Check if selected date is in future
+    const isFutureDate = isFuture(new Date(selectedDate));
+
     // Fetch attendance data
     const fetchAttendanceData = async () => {
+        // Don't fetch for future dates
+        if (isFutureDate) {
+            setAttendanceData([]);
+            setSummary({
+                totalEmployees: 0,
+                present: 0,
+                halfDay: 0,
+                earlyLeave: 0,
+                absent: 0,
+                active: 0,
+                awaitingApproval: 0,
+                holiday: 0,
+                presentPercentage: '0.0'
+            });
+            setIsHoliday(false);
+            setHolidayInfo(null);
+            return;
+        }
+
         try {
             setLoading(true);
             const formattedDate = selectedDate;
@@ -124,15 +152,39 @@ const AttendanceDashboard = () => {
                 setHolidayInfo(result.data.holidayInfo);
             } else {
                 console.error('Failed to fetch attendance data:', result.error);
+                setAttendanceData([]);
+                setSummary({
+                    totalEmployees: 0,
+                    present: 0,
+                    halfDay: 0,
+                    earlyLeave: 0,
+                    absent: 0,
+                    active: 0,
+                    awaitingApproval: 0,
+                    holiday: 0,
+                    presentPercentage: '0.0'
+                });
             }
         } catch (error) {
             console.error('Error fetching attendance data:', error);
+            setAttendanceData([]);
+            setSummary({
+                totalEmployees: 0,
+                present: 0,
+                halfDay: 0,
+                earlyLeave: 0,
+                absent: 0,
+                active: 0,
+                awaitingApproval: 0,
+                holiday: 0,
+                presentPercentage: '0.0'
+            });
         } finally {
             setLoading(false);
         }
     };
 
-    // Fetch COMPLETE detailed attendance data
+    // Fetch detailed attendance data
     const fetchAttendanceDetails = async (attendanceId) => {
         try {
             setDetailsLoading(true);
@@ -162,10 +214,6 @@ const AttendanceDashboard = () => {
             setDetailsLoading(false);
         }
     };
-
-    useEffect(() => {
-        fetchAttendanceData();
-    }, [selectedDate]);
 
     // Approve attendance
     const handleApprove = async (attendanceId) => {
@@ -236,6 +284,10 @@ const AttendanceDashboard = () => {
         }
     };
 
+    useEffect(() => {
+        fetchAttendanceData();
+    }, [selectedDate]);
+
     // Filter data based on selections
     const filteredData = attendanceData.filter(employee => {
         // Department filter
@@ -253,8 +305,7 @@ const AttendanceDashboard = () => {
             const searchLower = searchTerm.toLowerCase();
             return (
                 employee.name.toLowerCase().includes(searchLower) ||
-                employee.department.toLowerCase().includes(searchLower) ||
-                employee.role.toLowerCase().includes(searchLower)
+                employee.department.toLowerCase().includes(searchLower)
             );
         }
 
@@ -282,87 +333,45 @@ const AttendanceDashboard = () => {
         return format(new Date(time), 'HH:mm');
     };
 
-    // Get status badge variant
-    const getStatusVariant = (status) => {
+    // Enhanced status color with better holiday styling
+    const getStatusColor = (status, isHoliday = false) => {
+        if (isHoliday) {
+            return 'bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-800 border border-purple-200 shadow-sm';
+        }
+        
         switch (status) {
-            case 'Present': return 'default';
-            case 'Active': return 'secondary';
-            case 'Half Day': return 'outline';
-            case 'Early Leave': return 'destructive';
-            case 'Absent': return 'secondary';
-            case 'AwaitingApproval': return 'outline';
-            case 'Holiday': return 'default';
-            default: return 'outline';
+            case 'Present': return 'bg-green-100 text-green-800 border border-green-200';
+            case 'Active': return 'bg-blue-100 text-blue-800 border border-blue-200';
+            case 'Half Day': return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+            case 'Early Leave': return 'bg-orange-100 text-orange-800 border border-orange-200';
+            case 'Absent': return 'bg-red-100 text-red-800 border border-red-200';
+            case 'AwaitingApproval': return 'bg-purple-100 text-purple-800 border border-purple-200';
+            case 'Holiday': return 'bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-800 border border-purple-200 shadow-sm';
+            default: return 'bg-gray-100 text-gray-800 border border-gray-200';
         }
     };
 
-    // Get status color
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'Present': return 'bg-green-100 text-green-800';
-            case 'Active': return 'bg-blue-100 text-blue-800';
-            case 'Half Day': return 'bg-yellow-100 text-yellow-800';
-            case 'Early Leave': return 'bg-orange-100 text-orange-800';
-            case 'Absent': return 'bg-red-100 text-red-800';
-            case 'AwaitingApproval': return 'bg-purple-100 text-purple-800';
-            case 'Holiday': return 'bg-indigo-100 text-indigo-800';
-            default: return 'bg-gray-100 text-gray-800';
-        }
-    };
-
-    // Render coordinate information
-    const renderCoordinates = (coordinates, label) => {
-        if (!coordinates) return null;
-
-        return (
-            <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-blue-600" />
-                    <span className="font-medium">{label}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="bg-blue-50 p-2 rounded">
-                        <span className="text-blue-700">Lat: {coordinates.latitude}</span>
-                    </div>
-                    <div className="bg-blue-50 p-2 rounded">
-                        <span className="text-blue-700">Lng: {coordinates.longitude}</span>
-                    </div>
-                </div>
+    // Future date message component
+    const FutureDateMessage = () => (
+        <div className="text-center py-12">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CalendarOff className="h-8 w-8 text-blue-600" />
             </div>
-        );
-    };
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Future Date Selected
+            </h3>
+            <p className="text-gray-600 max-w-md mx-auto">
+                Attendance records are not available for future dates. 
+                Please select today's date or a past date to view attendance data.
+            </p>
+        </div>
+    );
 
     return (
         <div className="min-h-screen bg-gray-50 p-6">
             <div className="max-w-7xl mx-auto">
                 {/* Holiday Banner */}
-                {isHoliday && holidayInfo && (
-                    <Card className="bg-indigo-50 border-indigo-200 mb-6">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-4">
-                                    <div className="p-3 bg-indigo-100 rounded-lg">
-                                        <AlertCircle className="h-6 w-6 text-indigo-600" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-semibold text-indigo-800">Holiday Notice</h3>
-                                        <p className="text-indigo-700 text-sm">
-                                            {holidayInfo.title} - {holidayInfo.description}
-                                        </p>
-                                        {holidayInfo.departments && (
-                                            <p className="text-indigo-600 text-xs mt-1">
-                                                Affected departments: {holidayInfo.departments.join(', ')}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                                <Badge variant="secondary" className="bg-indigo-200 text-indigo-800">
-                                    Holiday
-                                </Badge>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
+                <HolidayBanner isHoliday={isHoliday} holidayInfo={holidayInfo} />
 
                 {/* Header */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
@@ -378,11 +387,11 @@ const AttendanceDashboard = () => {
                         </div>
 
                         <div className="flex items-center gap-3">
-                            <Button onClick={fetchAttendanceData} disabled={loading}>
+                            <Button onClick={fetchAttendanceData} disabled={loading || isFutureDate}>
                                 <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                                 Refresh
                             </Button>
-                            <Button variant="outline">
+                            <Button variant="outline" disabled={isFutureDate}>
                                 <Download className="w-4 h-4 mr-2" />
                                 Export
                             </Button>
@@ -391,103 +400,7 @@ const AttendanceDashboard = () => {
                 </div>
 
                 {/* Summary Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-8 gap-4 mb-6">
-                    <Card>
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Total</p>
-                                    <p className="text-2xl font-bold text-gray-900">{summary.totalEmployees || 0}</p>
-                                </div>
-                                <Users className="w-8 h-8 text-blue-500" />
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Present</p>
-                                    <p className="text-2xl font-bold text-green-600">{summary.present || 0}</p>
-                                </div>
-                                <UserCheck className="w-8 h-8 text-green-500" />
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Active</p>
-                                    <p className="text-2xl font-bold text-blue-600">{summary.active || 0}</p>
-                                </div>
-                                <Clock className="w-8 h-8 text-blue-500" />
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Half Day</p>
-                                    <p className="text-2xl font-bold text-yellow-600">{summary.halfDay || 0}</p>
-                                </div>
-                                <AlertCircle className="w-8 h-8 text-yellow-500" />
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Early Leave</p>
-                                    <p className="text-2xl font-bold text-orange-600">{summary.earlyLeave || 0}</p>
-                                </div>
-                                <AlertCircle className="w-8 h-8 text-orange-500" />
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Absent</p>
-                                    <p className="text-2xl font-bold text-red-600">{summary.absent || 0}</p>
-                                </div>
-                                <UserX className="w-8 h-8 text-red-500" />
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Pending</p>
-                                    <p className="text-2xl font-bold text-purple-600">{summary.awaitingApproval || 0}</p>
-                                </div>
-                                <AlertCircle className="w-8 h-8 text-purple-500" />
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Holiday</p>
-                                    <p className="text-2xl font-bold text-indigo-600">{summary.holiday || 0}</p>
-                                </div>
-                                <AlertCircle className="w-8 h-8 text-indigo-500" />
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                <SummaryCards summary={summary} />
 
                 {/* Filters */}
                 <Card className="mb-6">
@@ -496,6 +409,11 @@ const AttendanceDashboard = () => {
                             <Filter className="h-5 w-5" />
                             Filters
                         </CardTitle>
+                        {isFutureDate && (
+                            <CardDescription className="text-amber-600 font-medium">
+                                Future date selected - Attendance data unavailable
+                            </CardDescription>
+                        )}
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -506,12 +424,13 @@ const AttendanceDashboard = () => {
                                     id="date"
                                     value={selectedDate}
                                     onChange={(e) => setSelectedDate(e.target.value)}
+                                    max={new Date().toISOString().split('T')[0]} // Disable future dates
                                 />
                             </div>
 
                             <div className="space-y-2">
                                 <Label htmlFor="department">Department</Label>
-                                <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                                <Select value={departmentFilter} onValueChange={setDepartmentFilter} disabled={isFutureDate}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="All Departments" />
                                     </SelectTrigger>
@@ -526,7 +445,7 @@ const AttendanceDashboard = () => {
 
                             <div className="space-y-2">
                                 <Label htmlFor="status">Status</Label>
-                                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                <Select value={statusFilter} onValueChange={setStatusFilter} disabled={isFutureDate}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="All Status" />
                                     </SelectTrigger>
@@ -549,6 +468,7 @@ const AttendanceDashboard = () => {
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                         className="pl-10"
+                                        disabled={isFutureDate}
                                     />
                                 </div>
                             </div>
@@ -562,8 +482,9 @@ const AttendanceDashboard = () => {
                         <CardTitle>Daily Attendance</CardTitle>
                         <CardDescription>
                             {format(new Date(selectedDate), 'EEEE, MMMM dd, yyyy')} •
-                            Showing {filteredData.length} of {attendanceData.length} employees
+                            {!isFutureDate && ` Showing ${filteredData.length} of ${attendanceData.length} employees`}
                             {isHoliday && ' • Holiday Today'}
+                            {isFutureDate && ' • Future Date - No Data Available'}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -572,13 +493,15 @@ const AttendanceDashboard = () => {
                                 <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
                                 <span className="ml-2 text-gray-600">Loading attendance data...</span>
                             </div>
+                        ) : isFutureDate ? (
+                            <FutureDateMessage />
                         ) : (
                             <div className="rounded-md border">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Employee Name</TableHead>
-                                            <TableHead>Role/Department</TableHead>
+                                            <TableHead>Department</TableHead>
                                             <TableHead>Status</TableHead>
                                             <TableHead>Start Time</TableHead>
                                             <TableHead>End Time</TableHead>
@@ -613,29 +536,28 @@ const AttendanceDashboard = () => {
                                                             <User className="h-4 w-4" />
                                                             {employee.name}
                                                             {employee.holidayInfo && (
-                                                                <span className="ml-2 text-xs text-indigo-600">🎉</span>
+                                                                <span className="ml-2 text-xs text-purple-600">🎉</span>
                                                             )}
                                                         </button>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <div>
-                                                            <div className="font-medium">{employee.role}</div>
-                                                            <div className="text-sm text-muted-foreground">{employee.department}</div>
+                                                        <div className="font-medium text-gray-900">
+                                                            {employee.department}
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Badge
-                                                            variant={getStatusVariant(employee.status)}
-                                                            className={getStatusColor(employee.status)}
-                                                        >
-                                                            {employee.status}
-                                                            {employee.isActive && ' 🔵'}
-                                                        </Badge>
-                                                        {employee.holidayInfo && (
-                                                            <div className="text-xs text-indigo-600 mt-1">
-                                                                {employee.holidayInfo.title}
-                                                            </div>
-                                                        )}
+                                                        <div className="space-y-1">
+                                                            <Badge className={getStatusColor(employee.status, employee.status === 'Holiday')}>
+                                                                {employee.status === 'Holiday' && '🎉 '}
+                                                                {employee.status}
+                                                                {employee.isActive && employee.status !== 'Holiday' && ' 🔵'}
+                                                            </Badge>
+                                                            {employee.holidayInfo && (
+                                                                <div className="text-xs text-purple-600 font-medium">
+                                                                    {employee.holidayInfo.title}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </TableCell>
                                                     <TableCell>{formatSimpleTime(employee.startTime)}</TableCell>
                                                     <TableCell>{formatSimpleTime(employee.endTime)}</TableCell>
@@ -647,7 +569,7 @@ const AttendanceDashboard = () => {
                                                     </TableCell>
                                                     <TableCell>
                                                         <div className="flex space-x-2">
-                                                            {employee.requiresApproval && (
+                                                            {employee.requiresApproval && employee.status !== 'Holiday' && (
                                                                 <Button
                                                                     size="sm"
                                                                     onClick={() => {
@@ -667,6 +589,7 @@ const AttendanceDashboard = () => {
                                                                     setSelectedAttendance(employee);
                                                                     setStatusDialog(true);
                                                                 }}
+                                                                disabled={employee.status === 'Holiday'}
                                                             >
                                                                 <MoreHorizontal className="h-4 w-4" />
                                                             </Button>
@@ -766,407 +689,17 @@ const AttendanceDashboard = () => {
                 </DialogContent>
             </Dialog>
 
-            {/* Employee Details Dialog - COMPLETE WITH ALL DATA */}
-            <Dialog open={detailsDialog} onOpenChange={setDetailsDialog}>
-                <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Eye className="h-5 w-5" />
-                            Attendance Details
-                        </DialogTitle>
-                        <DialogDescription>
-                            Complete attendance information for {attendanceDetails?.employeeInfo?.name}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    {detailsLoading ? (
-                        <div className="flex justify-center items-center p-8">
-                            <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
-                            <span className="ml-2 text-gray-600">Loading detailed information...</span>
-                        </div>
-                    ) : attendanceDetails ? (
-                        <div className="space-y-6">
-                            {/* Employee Information Section */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <User className="h-5 w-5" />
-                                        Employee Information
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <IdCard className="h-4 w-4 text-blue-600" />
-                                                <Label>Employee ID</Label>
-                                            </div>
-                                            <p className="font-medium">{attendanceDetails.employeeInfo.employeeId || 'N/A'}</p>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <User className="h-4 w-4 text-blue-600" />
-                                                <Label>Full Name</Label>
-                                            </div>
-                                            <p className="font-medium">{attendanceDetails.employeeInfo.name}</p>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <Mail className="h-4 w-4 text-blue-600" />
-                                                <Label>Email</Label>
-                                            </div>
-                                            <p className="font-medium">{attendanceDetails.employeeInfo.email || 'N/A'}</p>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <Phone className="h-4 w-4 text-blue-600" />
-                                                <Label>Phone</Label>
-                                            </div>
-                                            <p className="font-medium">{attendanceDetails.employeeInfo.phone || 'N/A'}</p>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <Building className="h-4 w-4 text-blue-600" />
-                                                <Label>Department</Label>
-                                            </div>
-                                            <p className="font-medium">{attendanceDetails.employeeInfo.department}</p>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <FileText className="h-4 w-4 text-blue-600" />
-                                                <Label>Employee Model</Label>
-                                            </div>
-                                            <p className="font-medium">{attendanceDetails.employeeInfo.employeeModel || 'N/A'}</p>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            {/* Attendance Timeline */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <CalendarDays className="h-5 w-5" />
-                                        Attendance Timeline
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="space-y-4">
-                                            <h4 className="font-semibold flex items-center gap-2">
-                                                <Calendar className="h-4 w-4" />
-                                                Work Date
-                                            </h4>
-                                            <p className="text-lg font-medium">
-                                                {format(new Date(attendanceDetails.attendanceDetails.date), 'PPPP')}
-                                            </p>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            <h4 className="font-semibold flex items-center gap-2">
-                                                <Clock className="h-4 w-4" />
-                                                Check-In
-                                            </h4>
-                                            <div className="space-y-2">
-                                                <p className="font-medium">
-                                                    {formatTime(attendanceDetails.attendanceDetails.workModeOnTime)}
-                                                </p>
-                                                {attendanceDetails.locationData.workModeOnLocation && (
-                                                    <div className="text-sm text-gray-600">
-                                                        {attendanceDetails.locationData.workModeOnLocation.address}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            <h4 className="font-semibold flex items-center gap-2">
-                                                <Clock className="h-4 w-4" />
-                                                Check-Out
-                                            </h4>
-                                            <div className="space-y-2">
-                                                <p className="font-medium">
-                                                    {formatTime(attendanceDetails.attendanceDetails.workModeOffTime)}
-                                                </p>
-                                                {attendanceDetails.locationData.workModeOffLocation && (
-                                                    <div className="text-sm text-gray-600">
-                                                        {attendanceDetails.locationData.workModeOffLocation.address}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Duration Summary */}
-                                    <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <div className="text-center">
-                                                <p className="text-sm text-gray-600">Total Duration</p>
-                                                <p className="text-2xl font-bold text-blue-700">
-                                                    {formatDuration(attendanceDetails.attendanceDetails.totalWorkDuration)}
-                                                </p>
-                                            </div>
-                                            <div className="text-center">
-                                                <p className="text-sm text-gray-600">Distance Traveled</p>
-                                                <p className="text-2xl font-bold text-green-700">
-                                                    {attendanceDetails.travelData.totalDistance || 0} km
-                                                </p>
-                                            </div>
-                                            <div className="text-center">
-                                                <p className="text-sm text-gray-600">Status</p>
-                                                <Badge className={getStatusColor(attendanceDetails.attendanceDetails.status)}>
-                                                    {attendanceDetails.attendanceDetails.status}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            {/* Location Details */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Check-In Location */}
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <MapPin className="h-5 w-5" />
-                                            Check-In Location
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        {attendanceDetails.locationData.workModeOnLocation ? (
-                                            <div className="space-y-4">
-                                                {renderCoordinates(
-                                                    attendanceDetails.locationData.workModeOnLocation,
-                                                    "Coordinates"
-                                                )}
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <Clock className="h-4 w-4 text-gray-600" />
-                                                        <span className="text-sm text-gray-600">Time:</span>
-                                                    </div>
-                                                    <p className="font-medium">
-                                                        {formatTime(attendanceDetails.attendanceDetails.workModeOnTime)}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <p className="text-gray-500 text-center py-4">No location data available</p>
-                                        )}
-                                    </CardContent>
-                                </Card>
-
-                                {/* Check-Out Location */}
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <MapPin className="h-5 w-5" />
-                                            Check-Out Location
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        {attendanceDetails.locationData.workModeOffLocation ? (
-                                            <div className="space-y-4">
-                                                {renderCoordinates(
-                                                    attendanceDetails.locationData.workModeOffLocation,
-                                                    "Coordinates"
-                                                )}
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <Clock className="h-4 w-4 text-gray-600" />
-                                                        <span className="text-sm text-gray-600">Time:</span>
-                                                    </div>
-                                                    <p className="font-medium">
-                                                        {formatTime(attendanceDetails.attendanceDetails.workModeOffTime)}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <p className="text-gray-500 text-center py-4">No location data available</p>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </div>
-
-                            {/* Media and Travel Data */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Attendance Image */}
-                                {attendanceDetails.mediaData.hasImage && (
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle className="flex items-center gap-2">
-                                                <ImageIcon className="h-5 w-5" />
-                                                Attendance Image
-                                            </CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="flex justify-center">
-                                                <img
-                                                    src={attendanceDetails.mediaData.imageURL}
-                                                    alt="Attendance proof"
-                                                    className="max-w-full h-auto rounded-lg shadow-md max-h-80 object-cover border"
-                                                    onError={(e) => {
-                                                        e.target.src = '/api/placeholder/400/300';
-                                                        e.target.alt = 'Image not available';
-                                                    }}
-                                                />
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                )}
-
-                                {/* Travel Logs */}
-                                {attendanceDetails.travelData.totalLogs > 0 && (
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle className="flex items-center gap-2">
-                                                <Navigation className="h-5 w-5" />
-                                                Travel Logs ({attendanceDetails.travelData.totalLogs})
-                                            </CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="space-y-3 max-h-60 overflow-y-auto">
-                                                {attendanceDetails.travelData.travelLogs.map((log, index) => (
-                                                    <div key={index} className="p-3 border rounded-lg bg-gray-50">
-                                                        <div className="flex justify-between items-start mb-2">
-                                                            <span className="font-medium bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
-                                                                Log {index + 1}
-                                                            </span>
-                                                            <span className="text-xs text-gray-500">
-                                                                {formatTime(log.timestamp)}
-                                                            </span>
-                                                        </div>
-                                                        <div className="grid grid-cols-2 gap-2 text-sm">
-                                                            <div className="bg-white p-2 rounded">
-                                                                <span className="text-gray-600">Lat: </span>
-                                                                <span className="font-medium">{log.coordinates.latitude}</span>
-                                                            </div>
-                                                            <div className="bg-white p-2 rounded">
-                                                                <span className="text-gray-600">Lng: </span>
-                                                                <span className="font-medium">{log.coordinates.longitude}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                )}
-                            </div>
-
-                            {/* Work Details and Approval */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Work Information */}
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <FileText className="h-5 w-5" />
-                                            Work Details
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-4">
-                                            <div>
-                                                <Label>Work Type</Label>
-                                                <p className="font-medium">{attendanceDetails.attendanceDetails.workType || 'Not specified'}</p>
-                                            </div>
-                                            <div>
-                                                <Label>Description</Label>
-                                                <p className="font-medium">{attendanceDetails.attendanceDetails.description || 'No description provided'}</p>
-                                            </div>
-                                            <div>
-                                                <Label>Current Status</Label>
-                                                <Badge className={getStatusColor(attendanceDetails.attendanceDetails.status)}>
-                                                    {attendanceDetails.attendanceDetails.status}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-
-                                {/* Approval Information */}
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <CheckSquare className="h-5 w-5" />
-                                            Approval Details
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-4">
-                                            {attendanceDetails.approvalData.approvedBy ? (
-                                                <>
-                                                    <div>
-                                                        <Label>Approved By</Label>
-                                                        <p className="font-medium">{attendanceDetails.approvalData.approvedBy.name}</p>
-                                                        <p className="text-sm text-gray-600">{attendanceDetails.approvalData.approvedBy.email}</p>
-                                                    </div>
-                                                    <div>
-                                                        <Label>Approval Date</Label>
-                                                        <p className="font-medium">
-                                                            {formatTime(attendanceDetails.approvalData.approvalDate)}
-                                                        </p>
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <div className="text-center py-4">
-                                                    <XCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                                                    <p className="text-gray-500">Not yet approved</p>
-                                                </div>
-                                            )}
-                                            {attendanceDetails.approvalData.remarks && (
-                                                <div>
-                                                    <Label>Remarks</Label>
-                                                    <p className="font-medium bg-yellow-50 p-2 rounded">
-                                                        {attendanceDetails.approvalData.remarks}
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
-
-                            {/* System Information */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <FileText className="h-5 w-5" />
-                                        System Information
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div>
-                                            <Label>Record Created</Label>
-                                            <p className="font-medium">
-                                                {formatTime(attendanceDetails.systemData.createdAt)}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <Label>Last Updated</Label>
-                                            <p className="font-medium">
-                                                {formatTime(attendanceDetails.systemData.updatedAt)}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <Label>Record ID</Label>
-                                            <p className="font-medium text-sm font-mono">
-                                                {attendanceDetails._id}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                            <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                            <p>No details available for this attendance record</p>
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
+            {/* Employee Details Dialog */}
+            <AttendanceDetailsModal
+                detailsDialog={detailsDialog}
+                setDetailsDialog={setDetailsDialog}
+                detailsLoading={detailsLoading}
+                attendanceDetails={attendanceDetails}
+                selectedAttendance={selectedAttendance}
+                formatTime={formatTime}
+                formatDuration={formatDuration}
+                getStatusColor={getStatusColor}
+            />
         </div>
     );
 };
