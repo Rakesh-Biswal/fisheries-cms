@@ -168,21 +168,136 @@ const HolidayManager = () => {
         }
     ]
 
-    // Enhanced departments list
+    // CORRECT departments list - MATCHING BACKEND ENUM EXACTLY
     const departments = [
-        { value: "HR", label: "HR Department", icon: "👥", color: "bg-pink-100 text-pink-800" },
-        { value: "Development", label: "Development Team", icon: "💻", color: "bg-blue-100 text-blue-800" },
-        { value: "Design", label: "Design Team", icon: "🎨", color: "bg-purple-100 text-purple-800" },
-        { value: "Marketing", label: "Marketing", icon: "📢", color: "bg-green-100 text-green-800" },
-        { value: "Sales", label: "Sales", icon: "💰", color: "bg-yellow-100 text-yellow-800" },
-        { value: "Support", label: "Customer Support", icon: "🔧", color: "bg-indigo-100 text-indigo-800" },
-        { value: "Management", label: "Management", icon: "👔", color: "bg-gray-100 text-gray-800" },
-        { value: "Accountant", label: "Accountant", icon: "📊", color: "bg-red-100 text-red-800" },
-        { value: "Project Manager", label: "Project Manager", icon: "📋", color: "bg-orange-100 text-orange-800" },
-        { value: "Team Leader", label: "Team Leader", icon: "👨‍💼", color: "bg-teal-100 text-teal-800" },
-        { value: "Telecaller", label: "Telecaller", icon: "📞", color: "bg-cyan-100 text-cyan-800" },
-        { value: "Sales Employee", label: "Sales Employee", icon: "💼", color: "bg-lime-100 text-lime-800" }
-    ]
+        { value: "hr", label: "HR Department", icon: "👥", color: "bg-pink-100 text-pink-800" },
+        { value: "accountant", label: "Accountant", icon: "📊", color: "bg-red-100 text-red-800" },
+        { value: "project-manager", label: "Project Manager", icon: "📋", color: "bg-orange-100 text-orange-800" },
+        { value: "team-leader", label: "Team Leader", icon: "👨‍💼", color: "bg-teal-100 text-teal-800" },
+        { value: "telecaller", label: "Telecaller", icon: "📞", color: "bg-cyan-100 text-cyan-800" },
+        { value: "sales-employee", label: "Sales Employee", icon: "💼", color: "bg-lime-100 text-lime-800" },
+        { value: "ceo", label: "CEO", icon: "👑", color: "bg-purple-100 text-purple-800" },
+    ];
+
+    // ✅ FIXED: Submit event to backend with proper date handling
+    const handleSubmit = async () => {
+        if (!validateForm()) return
+
+        try {
+            setLoading(true);
+
+            // ✅ FIX: Ensure date is stored as YYYY-MM-DD without timezone issues
+            const eventData = {
+                title: formData.title,
+                description: formData.description,
+                date: selectedDate, // This should be in YYYY-MM-DD format
+                departments: formData.departments,
+                status: formData.status,
+                startTime: formData.startTime,
+                endTime: formData.endTime,
+                displayTime: getDisplayTime(),
+                departmentColors: getDepartmentColors(),
+                backgroundColor: getEventColor(formData.status)
+            };
+
+            console.log("Sending data to backend - Date:", selectedDate, "Full Data:", eventData);
+
+            const response = await fetch(`${API_BASE_URL}/api/hr/holidays/create`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: 'include',
+                body: JSON.stringify(eventData),
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // ✅ FIX: Add the new event with proper date handling
+                const newEvent = {
+                    id: result.data._id,
+                    title: formData.title,
+                    start: selectedDate, // Use the exact date without timezone conversion
+                    backgroundColor: getEventColor(formData.status),
+                    borderColor: getEventBorderColor(formData.status),
+                    textColor: "white",
+                    extendedProps: eventData
+                };
+
+                setEvents(prev => [...prev, newEvent]);
+                showNotification(result.message || "Holiday created successfully for selected departments!");
+                resetForm();
+                setIsModalOpen(false);
+
+                // Refresh events to ensure consistency
+                await fetchEvents();
+            } else {
+                console.error("Backend error:", result);
+                showNotification(result.error || "Failed to create holiday", "error");
+            }
+        } catch (error) {
+            console.error("Error creating holiday:", error);
+            showNotification("Error creating holiday. Please try again.", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // ✅ FIXED: Fetch events with proper date handling
+    const fetchEvents = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch(`${API_BASE_URL}/api/hr/holidays/fetch`, {
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                const transformedEvents = result.data.map(event => {
+                    // ✅ FIX: Use the exact date from backend without timezone conversion
+                    const eventDate = event.date; // This should be YYYY-MM-DD
+
+                    console.log("Event from backend:", event.title, "Date:", eventDate);
+
+                    return {
+                        id: event._id,
+                        title: event.title,
+                        start: eventDate, // Use the exact date string
+                        backgroundColor: getEventColor(event.status),
+                        borderColor: getEventBorderColor(event.status),
+                        textColor: "white",
+                        classNames: ["attendance-event"],
+                        extendedProps: {
+                            departments: event.departments,
+                            status: event.status,
+                            startTime: event.startTime,
+                            endTime: event.endTime,
+                            displayTime: event.displayTime,
+                            departmentColors: event.departmentColors,
+                            title: event.title,
+                            description: event.description
+                        }
+                    };
+                });
+
+                console.log("Transformed events for calendar:", transformedEvents);
+                setEvents(transformedEvents);
+            } else {
+                showNotification(result.error || "Failed to fetch events", "error");
+            }
+        } catch (error) {
+            console.error("Error fetching events:", error);
+            showNotification("Error fetching events. Please check your connection.", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Time options
     const timeOptions = Array.from({ length: 48 }, (_, i) => {
@@ -234,46 +349,6 @@ const HolidayManager = () => {
             }
         };
     }, []);
-
-    // Fetch events from backend
-    const fetchEvents = async () => {
-        try {
-            setLoading(true);
-            const response = await fetch(`${API_BASE_URL}/api/hr/attendance-calendar/fetch`);
-            const result = await response.json();
-
-            if (result.success) {
-                const transformedEvents = result.data.map(event => ({
-                    id: event._id,
-                    title: event.title,
-                    start: event.date,
-                    backgroundColor: getEventColor(event.status),
-                    borderColor: getEventBorderColor(event.status),
-                    textColor: "white",
-                    classNames: ["attendance-event"],
-                    extendedProps: {
-                        departments: event.departments,
-                        status: event.status,
-                        startTime: event.startTime,
-                        endTime: event.endTime,
-                        displayTime: event.displayTime,
-                        departmentColors: event.departmentColors,
-                        title: event.title,
-                        description: event.description
-                    }
-                }));
-
-                setEvents(transformedEvents);
-            } else {
-                showNotification("Failed to fetch events", "error");
-            }
-        } catch (error) {
-            console.error("Error fetching events:", error);
-            showNotification("Error fetching events", "error");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     // Filter events based on search and filters
     const filteredEvents = events.filter(event => {
@@ -346,16 +421,18 @@ const HolidayManager = () => {
         return "bg-white border-gray-200 hover:bg-gray-50";
     };
 
-    // Handle date click
+    // ✅ FIXED: Handle date click with proper date formatting
     const handleDateClick = (info) => {
-        const clickedDate = info.dateStr
-        setSelectedDate(clickedDate)
+        const clickedDate = info.dateStr; // This should be YYYY-MM-DD
+        console.log("Date clicked:", clickedDate);
+        setSelectedDate(clickedDate);
 
-        const existing = events.find(event => event.start === clickedDate)
+        // ✅ FIX: Compare dates as strings to avoid timezone issues
+        const existing = events.find(event => event.start === clickedDate);
 
         if (existing) {
-            setExistingEvent(existing)
-            setIsDateUsed(true)
+            setExistingEvent(existing);
+            setIsDateUsed(true);
             setFormData({
                 departments: existing.extendedProps.departments || [],
                 status: existing.extendedProps.status,
@@ -363,10 +440,10 @@ const HolidayManager = () => {
                 endTime: existing.extendedProps.endTime || "17:00",
                 title: existing.extendedProps.title,
                 description: existing.extendedProps.description
-            })
+            });
         } else {
-            setExistingEvent(null)
-            setIsDateUsed(false)
+            setExistingEvent(null);
+            setIsDateUsed(false);
             setFormData({
                 departments: [],
                 status: "",
@@ -374,11 +451,11 @@ const HolidayManager = () => {
                 endTime: "17:00",
                 title: "",
                 description: ""
-            })
+            });
         }
 
-        setIsModalOpen(true)
-    }
+        setIsModalOpen(true);
+    };
 
     // Handle input changes
     const handleInputChange = (e) => {
@@ -455,64 +532,7 @@ const HolidayManager = () => {
         return true
     }
 
-    // Submit event to backend
-    const handleSubmit = async () => {
-        if (!validateForm()) return
-
-        try {
-            setLoading(true);
-
-            const eventData = {
-                title: formData.title,
-                description: formData.description,
-                date: selectedDate,
-                departments: formData.departments,
-                status: formData.status,
-                startTime: formData.startTime,
-                endTime: formData.endTime,
-                displayTime: getDisplayTime(),
-                departmentColors: getDepartmentColors(),
-                backgroundColor: getEventColor(formData.status)
-            };
-
-            const response = await fetch(`${API_BASE_URL}/api/hr/attendance-calendar/create`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(eventData),
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                // Add the new event to local state
-                const newEvent = {
-                    id: result.data._id,
-                    title: formData.title,
-                    start: selectedDate,
-                    backgroundColor: getEventColor(formData.status),
-                    borderColor: getEventBorderColor(formData.status),
-                    textColor: "white",
-                    extendedProps: eventData
-                };
-
-                setEvents(prev => [...prev, newEvent]);
-                showNotification("Event created successfully for selected departments!");
-                resetForm();
-                setIsModalOpen(false);
-            } else {
-                showNotification(result.error || "Failed to create event", "error");
-            }
-        } catch (error) {
-            console.error("Error creating event:", error);
-            showNotification("Error creating event", "error");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Update event in backend
+    // ✅ FIXED: Update event with proper date handling
     const handleUpdate = async () => {
         if (!existingEvent || !validateForm()) return
 
@@ -522,7 +542,7 @@ const HolidayManager = () => {
             const eventData = {
                 title: formData.title,
                 description: formData.description,
-                date: selectedDate,
+                date: selectedDate, // Use the exact selected date
                 departments: formData.departments,
                 status: formData.status,
                 startTime: formData.startTime,
@@ -532,22 +552,26 @@ const HolidayManager = () => {
                 backgroundColor: getEventColor(formData.status)
             };
 
-            const response = await fetch(`${API_BASE_URL}/api/hr/attendance-calendar/${existingEvent.id}`, {
+            console.log("Updating event - Date:", selectedDate, "Data:", eventData);
+
+            const response = await fetch(`${API_BASE_URL}/api/hr/holidays/${existingEvent.id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                 },
+                credentials: 'include',
                 body: JSON.stringify(eventData),
             });
 
             const result = await response.json();
 
             if (result.success) {
-                // Update the event in local state
+                // ✅ FIX: Update the event with proper date handling
                 const updatedEvents = events.map(event =>
                     event.id === existingEvent.id ? {
                         ...event,
                         title: formData.title,
+                        start: selectedDate, // Use the exact date
                         backgroundColor: getEventColor(formData.status),
                         borderColor: getEventBorderColor(formData.status),
                         extendedProps: eventData
@@ -555,29 +579,33 @@ const HolidayManager = () => {
                 );
 
                 setEvents(updatedEvents);
-                showNotification("Event updated successfully!");
+                showNotification(result.message || "Holiday updated successfully!");
                 resetForm();
                 setIsModalOpen(false);
+
+                // Refresh events to ensure consistency
+                await fetchEvents();
             } else {
-                showNotification(result.error || "Failed to update event", "error");
+                showNotification(result.error || "Failed to update holiday", "error");
             }
         } catch (error) {
-            console.error("Error updating event:", error);
-            showNotification("Error updating event", "error");
+            console.error("Error updating holiday:", error);
+            showNotification("Error updating holiday. Please try again.", "error");
         } finally {
             setLoading(false);
         }
     };
 
-    // Delete event from backend
+    // ✅ FIXED: Delete event from correct backend endpoint
     const handleDelete = async () => {
         if (!existingEvent) return
 
         try {
             setLoading(true);
 
-            const response = await fetch(`${API_BASE_URL}/api/hr/attendance-calendar/${existingEvent.id}`, {
+            const response = await fetch(`${API_BASE_URL}/api/hr/holidays/${existingEvent.id}`, {
                 method: "DELETE",
+                credentials: 'include'
             });
 
             const result = await response.json();
@@ -586,15 +614,18 @@ const HolidayManager = () => {
                 // Remove the event from local state
                 const filteredEvents = events.filter(event => event.id !== existingEvent.id);
                 setEvents(filteredEvents);
-                showNotification("Event deleted successfully!", "warning");
+                showNotification(result.message || "Holiday deleted successfully!", "warning");
                 resetForm();
                 setIsModalOpen(false);
+
+                // Refresh events to ensure consistency
+                await fetchEvents();
             } else {
-                showNotification(result.error || "Failed to delete event", "error");
+                showNotification(result.error || "Failed to delete holiday", "error");
             }
         } catch (error) {
-            console.error("Error deleting event:", error);
-            showNotification("Error deleting event", "error");
+            console.error("Error deleting holiday:", error);
+            showNotification("Error deleting holiday. Please try again.", "error");
         } finally {
             setLoading(false);
         }
@@ -962,7 +993,7 @@ const HolidayManager = () => {
                 </div>
             </div>
 
-            {/* Modal - Keep your existing modal code exactly as it was */}
+            {/* Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
