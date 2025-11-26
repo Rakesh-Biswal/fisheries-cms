@@ -66,7 +66,7 @@ export default function WorkModeTracker() {
         credentials: 'include',
         body: JSON.stringify({
           coordinates,
-          workType: "Field Work"
+          workType: "Office Work"
         })
       })
 
