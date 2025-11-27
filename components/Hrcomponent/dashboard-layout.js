@@ -34,19 +34,14 @@ const menuItems = [
     items: [
       { name: "Dashboard", href: "/dashboard/hr", icon: LayoutDashboard },
       { name: "Tasks & Meetings", href: "/dashboard/hr/tasks-meetings", icon: Calendar },
-      { name: "Timesheet", href: "/dashboard/hr/timesheet", icon: Clock },
-      { name: "Data Management", href: "/dashboard/hr/data-management", icon: Database },
+      { name: "Daily Attendance", href: "/dashboard/hr/attandanceSheetEmp", icon: UserCheck },
     ],
   },
   {
     title: "MANAGEMENT",
     items: [
-      { name: "Employees", href: "/dashboard/hr/employees", icon: Users },
-      { name: "Payroll", href: "/dashboard/hr/payroll", icon: CreditCard },
-      { name: "Attendance", href: "/dashboard/hr/attendance", icon: UserCheck },
-      { name: "Recruitment", href: "/dashboard/hr/recruitment", icon: UserPlus },
-      { name: "Attendance (Holidays)", href: "/dashboard/hr/holidays-management", icon: UserCheck },
-      { name: "Attendance Sheet", href: "/dashboard/hr/attandanceSheetEmp", icon: UserCheck },
+      { name: "Manage Holiday's", href: "/dashboard/hr/holidays-management", icon: UserCheck },
+      { name: "Manage Employee's", href: "/dashboard/hr/data-management", icon: Database },
     ],
   },
   {

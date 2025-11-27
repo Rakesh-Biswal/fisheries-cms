@@ -1,7 +1,7 @@
 // components/PM_Component/dashboard-layout.js
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -11,13 +11,19 @@ import {
   Home,
   ChevronDown,
   LogOut,
-  User
+  User,
+  Bell,
+  Search
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function DashboardLayout({ children, title = "Dashboard" }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [employeeData, setEmployeeData] = useState(null);
   const pathname = usePathname();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard/project-manager", icon: Home },
@@ -25,6 +31,16 @@ export default function DashboardLayout({ children, title = "Dashboard" }) {
     { name: "Payments", href: "/dashboard/project-manager/payments", icon: IndianRupee },
     { name: "Reports", href: "/dashboard/project-manager/reports", icon: BarChart3 },
   ];
+
+  // ✅ Load employee data from localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("EmployeeData");
+      if (stored) {
+        setEmployeeData(JSON.parse(stored));
+      }
+    }
+  }, []);
 
   const isActive = (href) => {
     return pathname === href || pathname.startsWith(href + "/");
@@ -67,6 +83,39 @@ export default function DashboardLayout({ children, title = "Dashboard" }) {
             })}
           </ul>
         </nav>
+
+        {/* Logout Button in Sidebar */}
+        <div className="absolute bottom-4 left-4 right-4">
+          <button
+            onClick={async () => {
+              try {
+                const response = await fetch(`${API_URL}/api/employee/signout`, {
+                  method: "POST",
+                  credentials: "include",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                  localStorage.removeItem("EmployeeData");
+                  window.location.href = "/";
+                } else {
+                  alert("Failed to log out, please try again.");
+                }
+              } catch (error) {
+                console.error("Logout error:", error);
+                alert("An error occurred while logging out.");
+              }
+            }}
+            className="flex w-full items-center px-4 py-3 text-sm font-medium text-gray-600 rounded-lg transition-colors hover:bg-gray-100 hover:text-gray-900"
+          >
+            <LogOut className="w-5 h-5 mr-3" />
+            Logout
+          </button>
+        </div>
       </div>
 
       {/* Main content */}
@@ -87,11 +136,39 @@ export default function DashboardLayout({ children, title = "Dashboard" }) {
             </div>
 
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
+              {/* Search Bar */}
+              <div className="relative hidden md:block">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input 
+                  placeholder="Search..." 
+                  className="pl-10 w-64 bg-gray-50 border-0" 
+                />
+              </div>
+
+              {/* Notification Bell */}
+              <Button variant="ghost" size="sm">
+                <Bell className="h-4 w-4" />
+              </Button>
+
+              {/* Employee Showcase */}
+              <div className="flex items-center space-x-3">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage
+                    src={employeeData?.photo || "/default-avatar.png"}
+                    alt={employeeData?.name || "Project Manager"}
+                  />
+                  <AvatarFallback>
+                    {employeeData?.name ? employeeData.name.charAt(0).toUpperCase() : "PM"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="hidden md:block text-right">
+                  <p className="text-sm font-medium text-gray-900">
+                    {employeeData?.name || "Project Manager"}
+                  </p>
+                  <p className="text-xs text-gray-500 capitalize">
+                    {employeeData?.role || "Project Manager"}
+                  </p>
                 </div>
-                <span className="text-sm font-medium">Project Manager</span>
                 <ChevronDown className="w-4 h-4 text-gray-400" />
               </div>
             </div>

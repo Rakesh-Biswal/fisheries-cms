@@ -26,14 +26,15 @@ import {
   Edit,
   Search,
   RefreshCw,
-  User
+  User,
+  Plus
 } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
-export default function HRAttendanceManagementPage() {
+export default function HREmployeeManagementPage() {
   const [pendingRequests, setPendingRequests] = useState([])
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
@@ -41,7 +42,7 @@ export default function HRAttendanceManagementPage() {
   const [selectedDepartment, setSelectedDepartment] = useState('all')
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedAttendance, setSelectedAttendance] = useState(null)
+  const [selectedEmployee, setSelectedEmployee] = useState(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [updateStatus, setUpdateStatus] = useState("")
   const [description, setDescription] = useState("")
@@ -101,32 +102,32 @@ export default function HRAttendanceManagementPage() {
     setLoading(false)
   }
 
-  // Quick approve function - sets status to "Present" without dialog
-  const handleQuickApprove = async (attendance) => {
+  // Quick approve function - sets status to "Active" without dialog
+  const handleQuickApprove = async (employee) => {
     try {
-      const response = await fetch(`${API_URL}/api/hr/attendance-management/update-status/${attendance._id}`, {
+      const response = await fetch(`${API_URL}/api/hr/attendance-management/update-status/${employee._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
         body: JSON.stringify({
-          status: 'Present',
+          status: 'Active',
           description: 'Approved by HR'
         })
       })
 
       if (response.ok) {
         const data = await response.json()
-        toast.success('Attendance approved successfully')
+        toast.success('Employee approved successfully')
         fetchData() // Refresh data
       } else {
         const error = await response.json()
-        throw new Error(error.message || 'Failed to approve attendance')
+        throw new Error(error.message || 'Failed to approve employee')
       }
     } catch (error) {
-      console.error('Error approving attendance:', error)
-      toast.error(error.message || 'Failed to approve attendance')
+      console.error('Error approving employee:', error)
+      toast.error(error.message || 'Failed to approve employee')
     }
   }
 
@@ -137,7 +138,7 @@ export default function HRAttendanceManagementPage() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/hr/attendance-management/update-status/${selectedAttendance._id}`, {
+      const response = await fetch(`${API_URL}/api/hr/attendance-management/update-status/${selectedEmployee._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -151,9 +152,9 @@ export default function HRAttendanceManagementPage() {
 
       if (response.ok) {
         const data = await response.json()
-        toast.success('Attendance status updated successfully')
+        toast.success('Employee status updated successfully')
         setIsDialogOpen(false)
-        setSelectedAttendance(null)
+        setSelectedEmployee(null)
         setUpdateStatus("")
         setDescription("")
         fetchData() // Refresh data
@@ -167,8 +168,8 @@ export default function HRAttendanceManagementPage() {
     }
   }
 
-  const openStatusDialog = (attendance, status = "") => {
-    setSelectedAttendance(attendance)
+  const openStatusDialog = (employee, status = "") => {
+    setSelectedEmployee(employee)
     setUpdateStatus(status || "")
     setDescription("")
     setIsDialogOpen(true)
@@ -176,15 +177,13 @@ export default function HRAttendanceManagementPage() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Present':
-        return "bg-green-100 text-green-800"
-      case 'Absent':
-        return "bg-red-100 text-red-800"
-      case 'Half Day':
-      case 'Early Leave':
-        return "bg-yellow-100 text-yellow-800"
-      case 'AwaitingApproval':
       case 'Active':
+        return "bg-green-100 text-green-800"
+      case 'Inactive':
+        return "bg-red-100 text-red-800"
+      case 'On Leave':
+        return "bg-yellow-100 text-yellow-800"
+      case 'Pending':
         return "bg-blue-100 text-blue-800"
       default:
         return "bg-gray-100 text-gray-800"
@@ -193,12 +192,11 @@ export default function HRAttendanceManagementPage() {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'Present':
-        return <CheckCircle className="h-4 w-4 text-green-500" />
-      case 'Absent':
-        return <XCircle className="h-4 w-4 text-red-500" />
-      case 'AwaitingApproval':
       case 'Active':
+        return <CheckCircle className="h-4 w-4 text-green-500" />
+      case 'Inactive':
+        return <XCircle className="h-4 w-4 text-red-500" />
+      case 'Pending':
         return <Clock className="h-4 w-4 text-blue-500" />
       default:
         return <Clock className="h-4 w-4 text-gray-500" />
@@ -244,18 +242,22 @@ export default function HRAttendanceManagementPage() {
   }
 
   return (
-    <DashboardLayout title="HR Attendance Management">
+    <DashboardLayout title="HR Employee Management">
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Attendance Management</h1>
-            <p className="text-gray-600">Manage and approve employee attendance records</p>
+            <h1 className="text-2xl font-bold text-gray-900">Employee Management</h1>
+            <p className="text-gray-600">Manage and approve employee records and status</p>
           </div>
           <div className="flex items-center space-x-3">
             <Button variant="outline" size="sm">
               <Download className="h-4 w-4 mr-2" />
               Export Report
+            </Button>
+            <Button size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Employee
             </Button>
             <Button size="sm" onClick={fetchData}>
               <RefreshCw className="h-4 w-4 mr-2" />
@@ -269,7 +271,7 @@ export default function HRAttendanceManagementPage() {
           <CardContent className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <Label htmlFor="date">Date</Label>
+                <Label htmlFor="date">Join Date</Label>
                 <Input
                   id="date"
                   type="date"
@@ -302,11 +304,10 @@ export default function HRAttendanceManagementPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="AwaitingApproval">Pending Approval</SelectItem>
-                    <SelectItem value="Present">Present</SelectItem>
-                    <SelectItem value="Half Day">Half Day</SelectItem>
-                    <SelectItem value="Absent">Absent</SelectItem>
-                    <SelectItem value="Early Leave">Early Leave</SelectItem>
+                    <SelectItem value="Pending">Pending Approval</SelectItem>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
+                    <SelectItem value="On Leave">On Leave</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -328,7 +329,7 @@ export default function HRAttendanceManagementPage() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Clock className="h-5 w-5 mr-2" />
-              Pending Attendance Requests ({filteredRequests.length})
+              Pending Employee Requests ({filteredRequests.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -338,7 +339,7 @@ export default function HRAttendanceManagementPage() {
               </div>
             ) : filteredRequests.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                No pending attendance requests found
+                No pending employee requests found
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -347,10 +348,10 @@ export default function HRAttendanceManagementPage() {
                     <TableRow>
                       <TableHead>Employee</TableHead>
                       <TableHead>Department</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Work Duration</TableHead>
+                      <TableHead>Join Date</TableHead>
+                      <TableHead>Contact Info</TableHead>
                       <TableHead>Current Status</TableHead>
-                      <TableHead>Work Type</TableHead>
+                      <TableHead>Role</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -364,18 +365,16 @@ export default function HRAttendanceManagementPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{request.department}</Badge>
+                          <Badge variant="outline" className={getDepartmentColor(request.department)}>
+                            {request.department}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           {new Date(request.date).toLocaleDateString('en-IN')}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center space-x-1">
-                            <Clock className="h-4 w-4 text-gray-400" />
-                            <span>{request.totalWorkDuration || 0} hours</span>
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {new Date(request.workModeOnTime).toLocaleTimeString()} - {new Date(request.workModeOffTime).toLocaleTimeString()}
+                          <div className="text-sm text-gray-500">
+                            {request.employeeEmail}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -397,10 +396,10 @@ export default function HRAttendanceManagementPage() {
                               className="bg-green-600 hover:bg-green-700 text-white"
                             >
                               <CheckCircle className="h-4 w-4 mr-1" />
-                              Accept
+                              Approve
                             </Button>
 
-                            <Button size="sm" variant="outline" onClick={() => openStatusDialog(request, 'Present')}>
+                            <Button size="sm" variant="outline" onClick={() => openStatusDialog(request, 'Active')}>
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
 
@@ -442,6 +441,7 @@ export default function HRAttendanceManagementPage() {
                       <TableHead>Department</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Join Date</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -486,13 +486,29 @@ export default function HRAttendanceManagementPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Button
-                            size="sm"
-                            onClick={() => handleViewDetails(employee._id)}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View Details
-                          </Button>
+                          <Badge variant="outline" className={getStatusColor(employee.status)}>
+                            {employee.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewDetails(employee._id)}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openStatusDialog(employee)}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -507,9 +523,9 @@ export default function HRAttendanceManagementPage() {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Update Attendance Status</DialogTitle>
+              <DialogTitle>Update Employee Status</DialogTitle>
               <DialogDescription>
-                Update the attendance status for {selectedAttendance?.employeeName}
+                Update the employment status for {selectedEmployee?.employeeName}
               </DialogDescription>
             </DialogHeader>
 
@@ -521,10 +537,10 @@ export default function HRAttendanceManagementPage() {
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Present">Present</SelectItem>
-                    <SelectItem value="Half Day">Half Day</SelectItem>
-                    <SelectItem value="Absent">Absent</SelectItem>
-                    <SelectItem value="Early Leave">Early Leave</SelectItem>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
+                    <SelectItem value="On Leave">On Leave</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -539,17 +555,17 @@ export default function HRAttendanceManagementPage() {
                   rows={3}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Optional: Add any notes or remarks for this attendance record
+                  Optional: Add any notes or remarks for this employee record
                 </p>
               </div>
 
               <div className="bg-gray-50 p-3 rounded-lg">
-                <h4 className="font-medium mb-2">Attendance Details:</h4>
+                <h4 className="font-medium mb-2">Employee Details:</h4>
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>Date: {selectedAttendance && new Date(selectedAttendance.date).toLocaleDateString('en-IN')}</div>
-                  <div>Duration: {selectedAttendance?.totalWorkDuration || 0} hours</div>
-                  <div>Work Type: {selectedAttendance?.workType}</div>
-                  <div>Department: {selectedAttendance?.department}</div>
+                  <div>Name: {selectedEmployee?.employeeName}</div>
+                  <div>Department: {selectedEmployee?.department}</div>
+                  <div>Email: {selectedEmployee?.employeeEmail}</div>
+                  <div>Join Date: {selectedEmployee && new Date(selectedEmployee.date).toLocaleDateString('en-IN')}</div>
                 </div>
               </div>
             </div>

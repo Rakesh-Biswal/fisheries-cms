@@ -1,397 +1,405 @@
+// components/Hrcomponent/overview.js
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import { MoreHorizontal, TrendingUp, Users, UserPlus, FileText, Calendar, Filter, Download } from "lucide-react"
+import { MoreHorizontal, TrendingUp, Users, UserPlus, FileText, Calendar, Filter, Download, ArrowRight } from "lucide-react"
 import DashboardLayout from "@/components/Hrcomponent/dashboard-layout"
 
-// Sample employee data that drives the interactive charts
-const initialEmployeeData = [
-  {
-    id: 1,
-    name: "Tanya Johnson",
-    email: "tanya@gmail.com",
-    department: "UX/UX Consultant",
-    position: "Analyst",
-    level: "Junior",
-    status: "Permanent",
-    checkIn: "09:00 AM",
-    checkOut: "17:00 PM",
-    attendanceStatus: "On time",
-    avatar: "/professional-woman-diverse.png",
-    lengthOfService: 2,
-    salary: 45000,
-  },
-  {
-    id: 2,
-    name: "Rob Moon",
-    email: "robmoon@gmail.com",
-    department: "Software Engineer",
-    position: "Developer",
-    level: "Senior",
-    status: "Permanent",
-    checkIn: "09:00 AM",
-    checkOut: "17:15 PM",
-    attendanceStatus: "On time",
-    avatar: "/professional-man.png",
-    lengthOfService: 5,
-    salary: 75000,
-  },
-  {
-    id: 3,
-    name: "Sophia Miller",
-    email: "sophia@gmail.com",
-    department: "Strategy Consultant",
-    position: "Manager",
-    level: "Senior",
-    status: "Permanent",
-    checkIn: "10:30 AM",
-    checkOut: "18:30 PM",
-    attendanceStatus: "Late",
-    avatar: "/professional-woman-diverse.png",
-    lengthOfService: 3,
-    salary: 65000,
-  },
-  {
-    id: 4,
-    name: "Barbara Sales",
-    email: "barbara@gmail.com",
-    department: "Finance",
-    position: "Analyst",
-    level: "Mid",
-    status: "Contract",
-    checkIn: "10:00 AM",
-    checkOut: "18:00 PM",
-    attendanceStatus: "Late",
-    avatar: "/professional-woman-diverse.png",
-    lengthOfService: 1,
-    salary: 50000,
-  },
-]
-
-// Employee growth data for the chart
-const employeeGrowthData = [
-  { month: "Jul", totalEmployees: 155, newHires: 55 },
-  { month: "Aug", totalEmployees: 165, newHires: 45 },
-  { month: "Sept", totalEmployees: 200, newHires: 35 },
-]
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 
 export default function HROverviewPage() {
-  const [employees, setEmployees] = useState(initialEmployeeData)
+  const router = useRouter()
+  const [overviewData, setOverviewData] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [selectedPeriod, setSelectedPeriod] = useState("01 Sept - 29 Sept 2025")
 
-  // Calculate dynamic stats based on employee data
-  const stats = useMemo(() => {
-    const totalEmployees = 200 // As shown in image
-    const newHires = 162 // As shown in image
-    const applicants = 16 // As shown in image
+  useEffect(() => {
+    fetchOverviewData()
+  }, [])
 
-    const employmentStatus = {
-      permanent: employees.filter((emp) => emp.status === "Permanent").length * 10, // Scale up for demo
-      contract: employees.filter((emp) => emp.status === "Contract").length * 8,
-      probation: 16, // As shown in image
+  const fetchOverviewData = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/hr/overview`, {
+        credentials: "include"
+      })
+      const result = await response.json()
+      
+      if (result.success) {
+        setOverviewData(result.data)
+      } else {
+        // Fallback to sample data if API fails
+        setOverviewData(generateSampleData())
+      }
+    } catch (error) {
+      console.error("Error fetching overview data:", error)
+      // Fallback to sample data
+      setOverviewData(generateSampleData())
+    } finally {
+      setLoading(false)
     }
+  }
 
+  // Generate sample data as fallback
+  const generateSampleData = () => {
     return {
-      totalEmployees,
-      newHires,
-      applicants,
-      employmentStatus,
+      stats: {
+        totalEmployees: 156,
+        newHires: 28,
+        applicants: 42,
+        totalFarmers: 89,
+        employmentStatus: {
+          permanent: 120,
+          contract: 24,
+          probation: 12
+        }
+      },
+      recentEmployees: [
+        {
+          _id: "1",
+          name: "Rajesh Kumar",
+          companyEmail: "rajesh@company.com",
+          photo: "",
+          role: "sales-employee",
+          empCode: "EMP001",
+          createdAt: new Date()
+        },
+        {
+          _id: "2", 
+          name: "Priya Sharma",
+          companyEmail: "priya@company.com",
+          photo: "",
+          role: "team-leader",
+          empCode: "EMP002",
+          createdAt: new Date()
+        },
+        {
+          _id: "3",
+          name: "Amit Patel", 
+          companyEmail: "amit@company.com",
+          photo: "",
+          role: "project-manager",
+          empCode: "EMP003",
+          createdAt: new Date()
+        },
+        {
+          _id: "4",
+          name: "Sneha Reddy",
+          companyEmail: "sneha@company.com", 
+          photo: "",
+          role: "accountant",
+          empCode: "EMP004",
+          createdAt: new Date()
+        }
+      ],
+      employeeGrowthData: [
+        { month: "Jul", totalEmployees: 142, newHires: 18 },
+        { month: "Aug", totalEmployees: 148, newHires: 22 },
+        { month: "Sept", totalEmployees: 156, newHires: 28 }
+      ],
+      lengthOfServiceData: [
+        { range: "0-1", count: 45 },
+        { range: "1-2", count: 38 },
+        { range: "2-3", count: 32 },
+        { range: "3-5", count: 25 },
+        { range: "5+", count: 16 }
+      ]
     }
-  }, [employees])
+  }
 
-  // Calculate length of service data dynamically
-  const lengthOfServiceData = useMemo(() => {
-    const serviceRanges = {
-      "0-1": 0,
-      "1-2": 0,
-      "2-3": 0,
-      "3-5": 0,
-      "5+": 0,
-    }
+  const handleViewAllEmployees = () => {
+    router.push("/dashboard/hr/data-management")
+  }
 
-    // Scale up the data to match the chart in the image
-    employees.forEach((emp) => {
-      if (emp.lengthOfService <= 1) serviceRanges["0-1"] += 5
-      else if (emp.lengthOfService <= 2) serviceRanges["1-2"] += 8
-      else if (emp.lengthOfService <= 3) serviceRanges["2-3"] += 12
-      else if (emp.lengthOfService <= 5) serviceRanges["3-5"] += 15
-      else serviceRanges["5+"] += 10
-    })
+  const handleViewAllAttendance = () => {
+    router.push("/dashboard/hr/attandanceSheetEmp")
+  }
 
-    return [
-      { range: "0-1", count: serviceRanges["0-1"] },
-      { range: "1-2", count: serviceRanges["1-2"] },
-      { range: "2-3", count: serviceRanges["2-3"] },
-      { range: "3-5", count: serviceRanges["3-5"] },
-      { range: "5+", count: serviceRanges["5+"] },
-    ]
-  }, [employees])
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading dashboard data...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  const { stats, recentEmployees, employeeGrowthData, lengthOfServiceData } = overviewData
+
+  // Format employee data for display
+  const displayEmployees = recentEmployees.slice(0, 4).map(emp => ({
+    id: emp._id,
+    name: emp.name,
+    email: emp.companyEmail,
+    department: emp.role === 'team-leader' ? 'Team Leader' : 
+                emp.role === 'sales-employee' ? 'Sales' :
+                emp.role === 'project-manager' ? 'Project Management' :
+                emp.role === 'telecaller' ? 'Telecalling' :
+                emp.role === 'accountant' ? 'Accounting' : 'HR',
+    position: emp.role === 'team-leader' ? 'Team Lead' : 
+              emp.role === 'sales-employee' ? 'Sales Executive' :
+              emp.role === 'project-manager' ? 'Project Manager' :
+              emp.role === 'telecaller' ? 'Telecaller' :
+              emp.role === 'accountant' ? 'Accountant' : 'HR Manager',
+    level: 'Active',
+    status: 'Permanent',
+    avatar: emp.photo || "/placeholder-avatar.jpg"
+  }))
 
   return (
     <DashboardLayout>
-      <div className="p-4 md:p-6 space-y-6 bg-gray-50 min-h-screen">
+      <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600 text-sm md:text-base">
-              Welcome to Neutrack Dashboard and have a productive day
+            <h1 className="text-2xl font-bold text-gray-900">HR Dashboard</h1>
+            <p className="text-gray-600 mt-1">
+              Welcome to Diga-Darshan HR Dashboard
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <Button variant="outline" size="sm" className="text-xs bg-transparent">
-              <Calendar className="h-4 w-4 mr-2" />
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
               {selectedPeriod}
             </Button>
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-xs">
-              <Download className="h-4 w-4 mr-2" />
+            <Button size="sm" className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
+              <Download className="h-4 w-4" />
               Export
             </Button>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {/* Employees Card */}
-          <Card className="bg-white">
-            <CardContent className="p-4 md:p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600 mb-1">Employees</p>
-                  <p className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{stats.totalEmployees}</p>
-                  <p className="text-xs text-green-600 flex items-center">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Total Employees */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Employees</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{stats.totalEmployees}</p>
+                  <p className="text-xs text-green-600 flex items-center mt-1">
                     <TrendingUp className="h-3 w-3 mr-1" />
-                    +5% last year
+                    +5% from last month
                   </p>
                 </div>
-                <div className="h-10 w-10 md:h-12 md:w-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Users className="h-5 w-5 md:h-6 md:w-6 text-blue-600" />
+                <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Users className="h-6 w-6 text-blue-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* New Hires Card */}
-          <Card className="bg-white">
-            <CardContent className="p-4 md:p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600 mb-1">New Hires</p>
-                  <p className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{stats.newHires}</p>
-                  <p className="text-xs text-green-600 flex items-center">
+          {/* New Hires */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">New Hires</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{stats.newHires}</p>
+                  <p className="text-xs text-green-600 flex items-center mt-1">
                     <TrendingUp className="h-3 w-3 mr-1" />
-                    +2% last month
+                    +12% from last month
                   </p>
                 </div>
-                <div className="h-10 w-10 md:h-12 md:w-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <UserPlus className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
+                <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <UserPlus className="h-6 w-6 text-green-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Applicants Card */}
-          <Card className="bg-white">
-            <CardContent className="p-4 md:p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600 mb-1">Applicants</p>
-                  <p className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{stats.applicants}</p>
-                  <p className="text-xs text-blue-600 flex items-center">
+          {/* Applicants */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Applicants</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{stats.applicants}</p>
+                  <p className="text-xs text-blue-600 flex items-center mt-1">
                     <FileText className="h-3 w-3 mr-1" />
-                    +3% last month
+                    +8% from last week
                   </p>
                 </div>
-                <div className="h-10 w-10 md:h-12 md:w-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <FileText className="h-5 w-5 md:h-6 md:w-6 text-orange-600" />
+                <div className="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <FileText className="h-6 w-6 text-orange-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Employment Status Card */}
-          <Card className="bg-white">
-            <CardContent className="p-4 md:p-6">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-medium text-gray-600">Employment Status</p>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="mb-4">
-                <div className="flex h-3 rounded-full overflow-hidden bg-gray-100">
-                  <div className="bg-blue-500" style={{ width: `${(150 / 200) * 100}%` }}></div>
-                  <div className="bg-orange-500" style={{ width: `${(34 / 200) * 100}%` }}></div>
-                  <div className="bg-red-500" style={{ width: `${(16 / 200) * 100}%` }}></div>
+          {/* Total Farmers */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Farmers</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{stats.totalFarmers}</p>
+                  <p className="text-xs text-green-600 flex items-center mt-1">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    Active customers
+                  </p>
                 </div>
-              </div>
-
-              {/* Legend */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-gray-600">Permanent</span>
-                  </div>
-                  <span className="font-medium">150</span>
+                <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <Users className="h-6 w-6 text-purple-600" />
                 </div>
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                    <span className="text-gray-600">Contract</span>
-                  </div>
-                  <span className="font-medium">34</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                    <span className="text-gray-600">Probation</span>
-                  </div>
-                  <span className="font-medium">16</span>
-                </div>
-              </div>
-
-              {/* Percentages */}
-              <div className="flex justify-between mt-3 text-xs font-medium">
-                <span>75%</span>
-                <span>20%</span>
-                <span>10%</span>
               </div>
             </CardContent>
           </Card>
         </div>
 
+        {/* Employment Status Card */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <CardTitle className="text-lg">Employment Status</CardTitle>
+              <Button variant="ghost" size="sm">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Progress Bar */}
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div className="flex h-3 rounded-full">
+                  <div 
+                    className="bg-blue-500" 
+                    style={{ width: `${(stats.employmentStatus.permanent / stats.totalEmployees) * 100}%` }}
+                  ></div>
+                  <div 
+                    className="bg-orange-500" 
+                    style={{ width: `${(stats.employmentStatus.contract / stats.totalEmployees) * 100}%` }}
+                  ></div>
+                  <div 
+                    className="bg-red-500" 
+                    style={{ width: `${(stats.employmentStatus.probation / stats.totalEmployees) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Legend */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm text-gray-600">Permanent</span>
+                  </div>
+                  <span className="font-semibold">{stats.employmentStatus.permanent}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                    <span className="text-sm text-gray-600">Contract</span>
+                  </div>
+                  <span className="font-semibold">{stats.employmentStatus.contract}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <span className="text-sm text-gray-600">Probation</span>
+                  </div>
+                  <span className="font-semibold">{stats.employmentStatus.probation}</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-          {/* Attendance Log */}
-          <Card className="lg:col-span-2 bg-white">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <CardTitle className="text-lg font-semibold">Attendance Log</CardTitle>
-              <div className="flex items-center space-x-2">
-                <Button variant="outline" size="sm" className="text-xs bg-transparent">
-                  Day
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Employee List */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Recent Employees</CardTitle>
+                <Button 
+                  onClick={handleViewAllEmployees}
+                  variant="outline" 
+                  size="sm"
+                  className="flex items-center gap-1"
+                >
+                  View All
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="sm" className="text-xs text-gray-500">
-                  Week
-                </Button>
-                <Button variant="ghost" size="sm" className="text-xs text-gray-500">
-                  Months
-                </Button>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="text-xs text-gray-500 border-b">
-                      <th className="text-left pb-3 font-medium">Employee</th>
-                      <th className="text-left pb-3 font-medium">Check In</th>
-                      <th className="text-left pb-3 font-medium">Check Out</th>
-                      <th className="text-left pb-3 font-medium">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="space-y-3">
-                    {employees.map((employee, index) => (
-                      <tr key={employee.id} className={index > 0 ? "border-t" : ""}>
-                        <td className="py-3">
-                          <div className="flex items-center space-x-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={employee.avatar || "/placeholder.svg"} />
-                              <AvatarFallback className="text-xs">
-                                {employee.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium text-gray-900 text-sm">{employee.name}</p>
-                              <p className="text-xs text-gray-500">{employee.email}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3">
-                          <span className="text-sm font-medium">{employee.checkIn}</span>
-                        </td>
-                        <td className="py-3">
-                          <span className="text-sm font-medium">{employee.checkOut}</span>
-                        </td>
-                        <td className="py-3">
-                          <Badge
-                            variant={employee.attendanceStatus === "On time" ? "default" : "destructive"}
-                            className="text-xs"
-                          >
-                            {employee.attendanceStatus}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {displayEmployees.map((employee) => (
+                    <div key={employee.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={employee.avatar} />
+                          <AvatarFallback>
+                            {employee.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-gray-900">{employee.name}</p>
+                          <p className="text-sm text-gray-500">{employee.email}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-gray-900">{employee.department}</p>
+                        <Badge variant="secondary" className="mt-1">
+                          {employee.position}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Employee Growth */}
-          <Card className="bg-white">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <CardTitle className="text-lg font-semibold">Employee Growth</CardTitle>
-              <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="sm" className="text-xs text-gray-500">
-                  Jul
-                </Button>
-                <Button variant="ghost" size="sm" className="text-xs text-gray-500">
-                  Aug
-                </Button>
-                <Button variant="ghost" size="sm" className="text-xs text-gray-500">
-                  Sept
-                </Button>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Employee Growth</CardTitle>
             </CardHeader>
-            <CardContent className="pt-0">
+            <CardContent>
               <div className="space-y-4">
-                <div>
-                  <div className="flex items-center space-x-4 mb-4">
-                    <div>
-                      <p className="text-xs text-gray-500">Total Employees</p>
-                      <p className="text-xl font-bold">155</p>
+                <div className="flex items-center gap-4">
+                  <div>
+                    <p className="text-2xl font-bold">{stats.totalEmployees}</p>
+                    <p className="text-sm text-gray-600">Total Employees</p>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                      <span className="text-sm text-gray-600">Employees</span>
                     </div>
-                    <div>
-                      <div className="flex items-center space-x-1 mb-1">
-                        <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                        <span className="text-xs text-gray-600">Employees</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                        <span className="text-xs text-gray-600">New Hires</span>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+                      <span className="text-sm text-gray-600">New Hires</span>
                     </div>
                   </div>
                 </div>
                 <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={employeeGrowthData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#666" }} />
-                    <YAxis hide />
-                    <Tooltip
-                      formatter={(value, name) => [value, name === "totalEmployees" ? "Total Employees" : "New Hires"]}
-                      labelStyle={{ color: "#666" }}
+                  <BarChart data={employeeGrowthData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <XAxis 
+                      dataKey="month" 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12 }}
                     />
-                    <Bar dataKey="totalEmployees" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="newHires" fill="#93C5FD" radius={[4, 4, 0, 0]} />
+                    <YAxis 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <Tooltip />
+                    <Bar dataKey="totalEmployees" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="newHires" fill="#93c5fd" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -400,92 +408,66 @@ export default function HROverviewPage() {
         </div>
 
         {/* Bottom Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Length of Service */}
-          <Card className="bg-white">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <CardTitle className="text-lg font-semibold">Length of Service</CardTitle>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
+          <Card>
+            <CardHeader>
+              <CardTitle>Length of Service</CardTitle>
             </CardHeader>
-            <CardContent className="pt-0">
+            <CardContent>
               <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={lengthOfServiceData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="range" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#666" }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#666" }} />
-                  <Tooltip formatter={(value) => [value, "Employees"]} labelStyle={{ color: "#666" }} />
-                  <Bar dataKey="count" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                <BarChart data={lengthOfServiceData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                  <XAxis 
+                    dataKey="range" 
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis 
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {/* Employee List */}
-          <Card className="bg-white">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <CardTitle className="text-lg font-semibold">Employee List</CardTitle>
-              <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="sm" className="text-xs">
-                  <Filter className="h-3 w-3 mr-1" />
-                  Filter Table
-                </Button>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </div>
+          {/* Attendance Summary */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Attendance Summary</CardTitle>
+              <Button 
+                onClick={handleViewAllAttendance}
+                variant="outline" 
+                size="sm"
+                className="flex items-center gap-1"
+              >
+                View All
+                <ArrowRight className="h-4 w-4" />
+              </Button>
             </CardHeader>
-            <CardContent className="pt-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="text-xs text-gray-500 border-b">
-                      <th className="text-left pb-3 font-medium">Name</th>
-                      <th className="text-left pb-3 font-medium">Email</th>
-                      <th className="text-left pb-3 font-medium">Position</th>
-                      <th className="text-left pb-3 font-medium">Level</th>
-                      <th className="text-left pb-3 font-medium">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {employees.map((employee, index) => (
-                      <tr key={employee.id} className={index > 0 ? "border-t" : ""}>
-                        <td className="py-3">
-                          <div className="flex items-center space-x-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={employee.avatar || "/placeholder.svg"} />
-                              <AvatarFallback className="text-xs">
-                                {employee.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium text-gray-900 text-sm">{employee.name}</span>
-                          </div>
-                        </td>
-                        <td className="py-3">
-                          <span className="text-sm text-gray-600">{employee.email}</span>
-                        </td>
-                        <td className="py-3">
-                          <span className="text-sm text-gray-600">{employee.department}</span>
-                        </td>
-                        <td className="py-3">
-                          <span className="text-sm text-gray-600">{employee.level}</span>
-                        </td>
-                        <td className="py-3">
-                          <Badge
-                            variant={employee.status === "Permanent" ? "default" : "secondary"}
-                            className="text-xs"
-                          >
-                            {employee.status}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <span className="font-medium">Present Today</span>
+                  <Badge variant="default">{Math.floor(stats.totalEmployees * 0.85)}</Badge>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <span className="font-medium">On Leave</span>
+                  <Badge variant="secondary">{Math.floor(stats.totalEmployees * 0.08)}</Badge>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <span className="font-medium">Late Arrivals</span>
+                  <Badge variant="destructive">{Math.floor(stats.totalEmployees * 0.05)}</Badge>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <span className="font-medium">Absent</span>
+                  <Badge variant="outline">{Math.floor(stats.totalEmployees * 0.02)}</Badge>
+                </div>
               </div>
             </CardContent>
           </Card>
