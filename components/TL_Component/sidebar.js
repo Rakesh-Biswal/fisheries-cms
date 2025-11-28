@@ -25,10 +25,8 @@ const sidebarItems = [
   { name: "Dashboard", href: "/dashboard/teamleader", icon: LayoutDashboard },
   { name: "Tasks & Meetings", href: "/dashboard/teamleader/tasks-meetings", icon: LayoutDashboard },
   { name: "Teams", href: "/dashboard/teamleader/teams", icon: Users },
-  { name: "Farms & Fields", href: "/dashboard/teamleader/farms-fields", icon: MapPin },
   { name: "Clients", href: "/dashboard/teamleader/clients", icon: UserCheck },
-  { name: "Maintenance", href: "/dashboard/teamleader/maintenance", icon: Wrench },
-  { name: "Suppliers", href: "/dashboard/teamleader/suppliers", icon: Truck },
+  
 ];
 
 const bottomItems = [
