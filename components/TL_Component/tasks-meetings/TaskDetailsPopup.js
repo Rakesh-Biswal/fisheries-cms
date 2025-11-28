@@ -196,7 +196,7 @@ const TaskDetailsPopup = ({
             <CardHeader className="pb-4">
                 <CardTitle className="text-lg flex items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-green-500" />
-                    Task Response Summary
+                    Task Response Summary deatils
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
