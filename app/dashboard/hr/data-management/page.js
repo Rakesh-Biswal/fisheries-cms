@@ -255,10 +255,7 @@ export default function HREmployeeManagementPage() {
               <Download className="h-4 w-4 mr-2" />
               Export Report
             </Button>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Employee
-            </Button>
+            
             <Button size="sm" onClick={fetchData}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
@@ -325,7 +322,7 @@ export default function HREmployeeManagementPage() {
         </Card>
 
         {/* Pending Requests */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <Clock className="h-5 w-5 mr-2" />
@@ -412,7 +409,7 @@ export default function HREmployeeManagementPage() {
               </div>
             )}
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Employees List */}
         <Card>

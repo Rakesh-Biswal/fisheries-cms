@@ -101,6 +101,13 @@ export default function EmployeeAttendanceDetails() {
       setDescription(existingRecord.description || "")
       setWorkType(existingRecord.workType || "Office Work")
     } else {
+      // Don't open dialog for future dates when creating new attendance
+      const today = normalizeDate(new Date())
+      if (clickedDate > today) {
+        toast.info('Cannot create attendance for future dates')
+        return
+      }
+      
       setSelectedAttendance(null)
       setStatus("Present")
       setDescription("")
@@ -198,6 +205,27 @@ export default function EmployeeAttendanceDetails() {
         return <Clock className="h-4 w-4 text-blue-500" />
       default:
         return <AlertCircle className="h-4 w-4 text-gray-500" />
+    }
+  }
+
+  // Map status values to display "Present" or "Absent"
+  const getDisplayStatus = (status) => {
+    switch (status) {
+      case 'Approved':
+      case 'Present':
+        return 'Present'
+      case 'Rejected':
+      case 'Absent':
+        return 'Absent'
+      case 'Half Day':
+        return 'Half Day'
+      case 'Early Leave':
+        return 'Early Leave'
+      case 'AwaitingApproval':
+      case 'Active':
+        return 'Pending'
+      default:
+        return status
     }
   }
 
@@ -332,7 +360,7 @@ export default function EmployeeAttendanceDetails() {
                 <div
                   key={index}
                   className={`min-h-20 border rounded-lg p-2 cursor-pointer hover:bg-gray-50 transition-colors ${
-                    day?.attendance ? getStatusColor(day.attendance.status) : 'bg-white'
+                    day?.attendance ? getStatusColor(getDisplayStatus(day.attendance.status)) : 'bg-white'
                   } ${!day ? 'bg-gray-50' : ''}`}
                   onClick={() => day && handleDateClick(day.date)}
                 >
@@ -342,7 +370,7 @@ export default function EmployeeAttendanceDetails() {
                       {day.attendance && (
                         <div className="space-y-1">
                           <Badge variant="outline" className="text-xs">
-                            {day.attendance.status}
+                            {getDisplayStatus(day.attendance.status)}
                           </Badge>
                           {day.attendance.workDuration && (
                             <div className="text-xs text-gray-500">
@@ -409,8 +437,8 @@ export default function EmployeeAttendanceDetails() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Present">Present</SelectItem>
-                    <SelectItem value="Half Day">Half Day</SelectItem>
                     <SelectItem value="Absent">Absent</SelectItem>
+                    <SelectItem value="Half Day">Half Day</SelectItem>
                     <SelectItem value="Early Leave">Early Leave</SelectItem>
                   </SelectContent>
                 </Select>
